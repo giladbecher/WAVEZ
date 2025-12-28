@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "@expo/metro-runtime": "~6.1.2",
+    "@supabase/supabase-js": "^2.87.0",
+    "expo-auth-session": "~7.0.10",
+    "expo-linear-gradient": "~15.0.8",
+    "expo-web-browser": "~15.0.10",
+    "leaflet": "^1.9.4",
+    "lucide-react-native": "^0.556.0",
+    "react-dom": "19.1.0",
+    "react-leaflet": "^5.0.0",
+    "react-native-web": "^0.21.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.10",
+    "typescript": "~5.9.2"
+  }
+}

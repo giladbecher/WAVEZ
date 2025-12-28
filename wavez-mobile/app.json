@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "WAVEZ PRO",
+    "slug": "wavez-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f172a"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f172a"
+      },
+      "package": "com.gilad.wavezpro", 
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/icon.png",
+      "display": "standalone",
+      "backgroundColor": "#0f172a",
+      "description": "WAVEZ PRO",
+      "themeColor": "#0f172a",
+      "startUrl": "/",
+      "meta": {
+        "apple-mobile-web-app-capable": "yes",
+        "apple-mobile-web-app-status-bar-style": "black-translucent",
+        "apple-mobile-web-app-title": "WAVEZ PRO"
+      }
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}

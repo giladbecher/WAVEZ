@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic HTML Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .test-box {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .emoji { font-size: 48px; margin-bottom: 20px; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 8px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+    </style>
+</head>
+<body>
+    <div class="test-box">
+        <div class="emoji">🧪</div>
+        <h1>Basic HTML Test</h1>
+        <p>This page tests if the web server is working without any JavaScript.</p>
+
+        <div class="status success">✅ HTML Loading: WORKS</div>
+        <div class="status success">✅ CSS Styling: WORKS</div>
+        <div class="status warning">⚠️ JavaScript: NOT LOADED (by design)</div>
+        <div class="status error">❌ If you don't see this: Web server problem</div>
+
+        <br>
+        <p><strong>Network URL:</strong> http://192.168.7.7:5180/basic.html</p>
+        <p><strong>Local URL:</strong> http://localhost:5180/basic.html</p>
+
+        <br>
+        <a href="/" style="color: #007bff; text-decoration: none; font-weight: bold;">← Back to React App</a>
+        <br>
+        <a href="/debug.html" style="color: #28a745; text-decoration: none; font-weight: bold;">🔧 Debug Page</a>
+    </div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

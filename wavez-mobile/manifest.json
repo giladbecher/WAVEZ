@@ -1,0 +1,15 @@
+{
+  "name": "WAVEZ PRO",
+  "short_name": "WAVEZ PRO",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png"
+    }
+  ]
+}

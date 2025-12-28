@@ -1,0 +1,28 @@
+# --- חסימת דאטה-סטים (כולל רווחים) ---
+8000 data/
+8000 data*/
+RAW_DATASET_IMAGES/
+assets/
+runs/
+wavez.db
+*.zip
+
+# --- חסימת מודולים ---
+node_modules/
+**/node_modules/
+
+# --- חסימת קבצים בינאריים ומדיה ---
+*.pt
+*.onnx
+*.jpg
+*.jpeg
+*.png
+*.mp4
+*.avi
+
+# --- חסימת קבצי מערכת ---
+dist/
+build/
+__pycache__/
+.env
+.DS_Store

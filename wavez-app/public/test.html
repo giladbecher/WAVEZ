@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WaveZ Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #00d4ff, #0f172a);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .test-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            max-width: 500px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .status {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
+        .wave { font-size: 48px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="test-card">
+        <div class="wave">🌊</div>
+        <h1>WaveZ Test Page</h1>
+        <p>This is a simple test to verify the web server is working.</p>
+
+        <div class="status success">✅ Web Server: Working</div>
+        <div class="status success">✅ Network Access: Enabled</div>
+        <div class="status">📱 Mobile Access: http://192.168.7.7:5178/test.html</div>
+
+        <br>
+        <a href="/" style="color: #00d4ff; text-decoration: none; font-weight: bold;">
+            ← Back to WaveZ App
+        </a>
+    </div>
+
+    <script>
+        console.log('WaveZ Test Page Loaded Successfully!');
+        console.log('Network URL: http://192.168.7.7:5178/');
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

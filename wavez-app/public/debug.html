@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WaveZ Debug Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #00d4ff, #0f172a);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .debug-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .status {
+            font-size: 18px;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .success { background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; }
+        .warning { background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; }
+        .error { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; }
+        .wave { font-size: 48px; margin-bottom: 20px; }
+        .big-button {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            background: #00d4ff;
+            color: #1e293b;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .big-button:hover { background: #00b4d8; }
+    </style>
+</head>
+<body>
+    <div class="debug-card">
+        <div class="wave">🔧</div>
+        <h1>WaveZ Debug Center</h1>
+        <p>Check what's working and what's not</p>
+
+        <div class="status success">✅ Web Server: Working</div>
+        <div class="status success">✅ Network Access: http://192.168.7.7:5180/</div>
+        <div class="status warning">⚠️ Check Console Logs: Press F12 → Console</div>
+        <div class="status error">❌ If blank screen: Look for RED/GREEN indicators</div>
+
+        <br><br>
+        <a href="/" class="big-button">🏠 Main App</a>
+        <a href="/test.html" class="big-button">🧪 Test Page</a>
+
+        <br><br>
+        <h3>Debug Steps:</h3>
+        <ol style="text-align: right; direction: rtl;">
+            <li>Check if you see RED debug panels</li>
+            <li>Press F12, go to Console tab</li>
+            <li>Look for WaveZ App logs</li>
+            <li>Tell me what you see!</li>
+        </ol>
+    </div>
+
+    <script>
+        console.log('🔧 Debug page loaded successfully!');
+        console.log('🌐 Network URL: http://192.168.7.7:5180/');
+        console.log('📊 Check browser console for React app logs');
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
