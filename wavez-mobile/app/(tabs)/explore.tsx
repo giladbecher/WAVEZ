@@ -4,7 +4,7 @@ export default function TabTwoScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Explore</Text>
-      <Text>בקרוב...</Text>
+      <Text>Coming Soon...</Text>
     </View>
   );
 }
