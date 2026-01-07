@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TouchableWithoutFeedback, I18nManager } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TouchableWithoutFeedback, Dimensions } from 'react-native';
 import { supabase } from '../../supabase'; 
-import { LinearGradient } from 'expo-linear-gradient';
+import { LineChart } from "react-native-chart-kit";
+
+// חישוב רוחב מסך
+const SCREEN_WIDTH = Dimensions.get("window").width;
 
 const BEACH_TRANSLATIONS = {
   "Haifa_BatGalim": "חיפה - בת גלים",
@@ -42,12 +45,13 @@ const CrowdForecast = () => {
     return dates;
   }, []);
 
+  // --- לוגיקה ---
   const fetchHistoricalData = async (targetDate, beach) => {
     try {
       setLoading(true);
       const dayOfWeek = targetDate.getDay();
       const { data: measurements, error } = await supabase
-        .from('measurements')
+        .from('measurements_israel_time')
         .select('*')
         .eq('beach_name', beach)
         .order('timestamp', { ascending: false })
@@ -116,22 +120,9 @@ const CrowdForecast = () => {
         predictedCrowd = Math.max(3, Math.round(waveHeight * 2));
       }
 
-      let loadLevel = 'low';
-      let loadColor = '#22c55e';
-      if (predictedCrowd > 25) {
-        loadLevel = 'high';
-        loadColor = '#ef4444';
-      } else if (predictedCrowd > 15) {
-        loadLevel = 'medium';
-        loadColor = '#f97316';
-      }
-
       result.push({
         hour,
-        waveHeight: waveHeight.toFixed(1),
-        predictedCrowd,
-        loadColor,
-        loadLevel
+        predictedCrowd
       });
     }
     return result;
@@ -142,11 +133,21 @@ const CrowdForecast = () => {
     fetchWaveForecast(selectedDate);
   }, [selectedDate, selectedBeach]);
 
-  const formatHour = (hour) => `${hour.toString().padStart(2, '0')}:00`;
   const formatDate = (date) => {
     const dayName = date.toLocaleDateString('he-IL', { weekday: 'short' });
     const dayMonth = date.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
     return `${dayName} ${dayMonth}`;
+  };
+
+  const chartData = {
+    labels: predictions.map((p, i) => (i % 3 === 0 ? `${p.hour}:00` : '')),
+    datasets: [
+      {
+        data: predictions.length > 0 ? predictions.map(p => p.predictedCrowd) : [0],
+        color: (opacity = 1) => `rgba(56, 189, 248, ${opacity})`,
+        strokeWidth: 3 
+      }
+    ],
   };
 
   return (
@@ -249,45 +250,88 @@ const CrowdForecast = () => {
           <Text style={styles.loadingText}>טוען תחזית...</Text>
         </View>
       ) : (
-        <ScrollView style={styles.hourlyContainer} nestedScrollEnabled={true}>
-          {predictions.map((prediction, index) => (
-            <View key={index} style={styles.hourRow}>
-              {/* צד ימין: שעה וגובה גל */}
-              <View style={styles.hourInfo}>
-                <Text style={styles.hourText}>{formatHour(prediction.hour)}</Text>
-                <Text style={styles.waveText}>{prediction.waveHeight}m</Text>
-              </View>
-              
-              {/* צד שמאל: בר עומס */}
-              <View style={styles.loadContainer}>
-                <View style={styles.loadBar}>
-                  <LinearGradient
-                    colors={[prediction.loadColor, prediction.loadColor + '80']}
-                    style={[styles.loadFill, { width: `${Math.min((prediction.predictedCrowd / 30) * 100, 100)}%` }]}
-                  />
+        <View style={styles.chartWrapper}>
+           <Text style={styles.chartTitle}>מגמת עומס יומית</Text>
+           
+           {predictions.length > 0 ? (
+                // 👇 כאן השינוי: עטפנו את הגרף ב-View שדוחף אותו שמאלה
+                <View style={{ paddingRight: 25 }}>
+                    <LineChart
+                        data={chartData}
+                        width={SCREEN_WIDTH - 40} 
+                        height={220}
+                        yAxisLabel=""
+                        yAxisSuffix=""
+                        yAxisInterval={1}
+                        fromZero={true}
+                        renderDotContent={({x, y, index, indexData}) => {
+                            if (indexData === 0) return null;
+                            
+                            return (
+                                <View
+                                    key={index}
+                                    style={{
+                                        position: 'absolute',
+                                        top: y - 20,
+                                        left: x - 10,
+                                        width: 20,
+                                        alignItems: 'center'
+                                    }}
+                                >
+                                    <Text style={{fontSize: 10, color: '#38bdf8', fontWeight: 'bold'}}>
+                                        {Math.round(indexData)}
+                                    </Text>
+                                </View>
+                            );
+                        }}
+                        chartConfig={{
+                            backgroundColor: "transparent",
+                            backgroundGradientFrom: "transparent",
+                            backgroundGradientTo: "transparent",
+                            backgroundGradientFromOpacity: 0,
+                            backgroundGradientToOpacity: 0,
+                            decimalPlaces: 0, 
+                            color: (opacity = 1) => `rgba(56, 189, 248, ${opacity})`,
+                            labelColor: (opacity = 1) => `rgba(148, 163, 184, ${opacity})`,
+                            style: { 
+                                borderRadius: 16,
+                                paddingRight: 0, 
+                                paddingLeft: 0
+                            },
+                            propsForDots: {
+                                r: "4",
+                                strokeWidth: "2",
+                                stroke: "#0f172a"
+                            },
+                            propsForBackgroundLines: {
+                                stroke: "#334155", 
+                                strokeWidth: 0.5,
+                                strokeDasharray: ""
+                            }
+                        }}
+                        bezier
+                        style={{
+                            marginVertical: 8,
+                            borderRadius: 16
+                            // הסרנו מכאן את marginRight כדי למנוע את השגיאה
+                        }}
+                        withInnerLines={true}
+                        withOuterLines={false}
+                    />
                 </View>
-                <Text style={styles.crowdText}>{prediction.predictedCrowd}</Text>
-              </View>
-            </View>
-          ))}
-        </ScrollView>
+            ) : (
+                <View style={{height: 220, justifyContent: 'center', alignItems: 'center'}}>
+                    <Text style={styles.noDataText}>אין נתונים ליום זה</Text>
+                </View>
+            )}
+           
+           <View style={styles.summaryContainer}>
+              <Text style={styles.summaryText}>
+                 * המספרים על הגרף מייצגים כמות גולשים משוערת
+              </Text>
+           </View>
+        </View>
       )}
-
-      {/* Legend */}
-      <View style={styles.legend}>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendColor, { backgroundColor: '#22c55e' }]} />
-          <Text style={styles.legendText}>שקט</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendColor, { backgroundColor: '#f97316' }]} />
-          <Text style={styles.legendText}>בינוני</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendColor, { backgroundColor: '#ef4444' }]} />
-          <Text style={styles.legendText}>עמוס</Text>
-        </View>
-      </View>
     </View>
   );
 };
@@ -295,7 +339,6 @@ const CrowdForecast = () => {
 const styles = StyleSheet.create({
   container: { marginTop: 20, paddingHorizontal: 20 },
   
-  // תיקון: יישור לימין במפורש
   selectorLabel: { color: '#94a3b8', marginBottom: 8, fontSize: 14, textAlign: 'right' },
   
   selectorButton: {
@@ -310,27 +353,35 @@ const styles = StyleSheet.create({
   loadingContainer: { alignItems: 'center', paddingVertical: 30 },
   loadingText: { color: '#94a3b8', marginTop: 10, fontSize: 14 },
   
-  hourlyContainer: { maxHeight: 300 },
-  hourRow: {
-    flexDirection: 'row', 
-    justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: '#1e293b', padding: 15, marginBottom: 8, borderRadius: 12,
-    borderWidth: 1, borderColor: '#334155',
+  chartWrapper: {
+    marginBottom: 30,
+    marginTop: 10,
+    alignItems: 'center',
+    width: '100%'
+  },
+
+  chartTitle: {
+    color: '#38bdf8',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+    width: '100%'
   },
   
-  hourInfo: { alignItems: 'flex-start' }, 
-  hourText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
-  waveText: { color: '#38bdf8', fontSize: 14, marginTop: 2 },
-  
-  loadContainer: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 15 },
-  loadBar: { flex: 1, height: 20, backgroundColor: '#334155', borderRadius: 10, overflow: 'hidden', marginRight: 10 }, 
-  loadFill: { height: '100%', borderRadius: 10 },
-  crowdText: { color: 'white', fontSize: 14, fontWeight: 'bold', minWidth: 30, textAlign: 'center' },
-  
-  legend: { flexDirection: 'row', justifyContent: 'center', marginTop: 15, gap: 20 },
-  legendItem: { flexDirection: 'row', alignItems: 'center' },
-  legendColor: { width: 12, height: 12, borderRadius: 6, marginLeft: 6 },
-  legendText: { color: '#94a3b8', fontSize: 12 },
+  noDataText: {
+    color: 'white',
+    textAlign: 'center'
+  },
+  summaryContainer: {
+    marginTop: 10,
+    paddingHorizontal: 10
+  },
+  summaryText: {
+    color: '#64748b',
+    fontSize: 12,
+    textAlign: 'center'
+  },
 
   modalOverlay: {
     flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.7)', justifyContent: 'center', alignItems: 'center',
@@ -341,7 +392,6 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#1e293b', textAlign: 'center', marginBottom: 15 },
   modalScrollView: { width: '100%' },
-  // תיקון: יישור התחלה (ימין ב-RTL)
   modalItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f1f5f9', alignItems: 'flex-start' }, 
   modalText: { fontSize: 18, color: '#334155', textAlign: 'right' },
 });

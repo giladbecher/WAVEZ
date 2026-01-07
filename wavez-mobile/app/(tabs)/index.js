@@ -1,11 +1,11 @@
 // @ts-nocheck
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { StyleSheet, Text, View, ScrollView, RefreshControl, StatusBar, TouchableOpacity, Modal, TouchableWithoutFeedback, I18nManager } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, RefreshControl, StatusBar, TouchableOpacity, Modal, TouchableWithoutFeedback, I18nManager, useWindowDimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../supabase';
-// החלפתי את Ionicons ב-MessageCircle שעובד בווב
-import { Waves, Wind, Users, MapPin, Home, TrendingUp, ChevronDown, MessageCircle } from 'lucide-react-native';
+import { Waves, Wind, Users, MapPin, Home, TrendingUp, ChevronDown, MessageCircle, LogOut } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Head from 'expo-router/head';
 import MapView, { Marker } from '../../components/AppMap'; 
 import CrowdForecast from './CrowdForecast';
 import FeedbackModal from '@/components/FeedbackModal';
@@ -60,13 +60,15 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState('home');
   const [showBeachSelector, setShowBeachSelector] = useState(false);
   const [selectedMapMarker, setSelectedMapMarker] = useState(null);
-  
   const [isFeedbackVisible, setFeedbackVisible] = useState(false);
+
+  const { width } = useWindowDimensions();
+  const isDesktop = width > 768; 
   
   const fetchData = async () => {
     try {
       const { data: measurements, error } = await supabase
-        .from('measurements')
+        .from('measurements_israel_time')
         .select('*')
         .order('id', { ascending: false })
         .limit(3000);
@@ -110,150 +112,201 @@ export default function HomeScreen() {
 
   const currentStatus = beachData.length > 0 ? beachData[beachData.length - 1] : null;
 
+  // --- 👇 פונקציה לחישוב טווח גולשים ---
+  const getSurferRange = (count) => {
+    const safeCount = count || 0;
+    const lower = Math.floor(safeCount / 5) * 5;
+    const upper = lower + 5;
+    return `${lower}-${upper}`;
+  };
+  // ----------------------------------------
+
+  const ResponsiveContainer = ({ children }) => (
+    <View style={isDesktop ? styles.desktopContainer : styles.mobileContainer}>
+        {children}
+    </View>
+  );
+
   const renderHome = () => (
     <ScrollView
       contentContainerStyle={styles.scrollContent}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />}
     >
-      <View style={{ marginBottom: 20 }}>
-        <Text style={styles.sectionTitle}>בחר חוף לצפייה:</Text>
-        <TouchableOpacity
-          style={styles.selectorButton}
-          onPress={() => setShowBeachSelector(true)}
-        >
-          <Text style={styles.selectorText}>
-            {selectedBeach ? (BEACH_TRANSLATIONS[selectedBeach] || selectedBeach) : "טוען..."}
-          </Text>
-          <ChevronDown color="#94a3b8" size={20} />
-        </TouchableOpacity>
-      </View>
-
-      <Modal
-        transparent={true}
-        visible={showBeachSelector}
-        animationType="fade"
-        onRequestClose={() => setShowBeachSelector(false)}
-      >
+      <ResponsiveContainer>
+        {/* 👇 כפתור התנתקות זמני לבדיקות */}
         <TouchableOpacity 
-            style={styles.modalOverlay} 
-            activeOpacity={1} 
-            onPress={() => setShowBeachSelector(false)}
+            onPress={async () => {
+                await supabase.auth.signOut();
+                // אין צורך באלרט, ה-_layout יזהה את הניתוק ויעביר אותך למסך כניסה
+            }}
+            style={{ 
+                backgroundColor: '#ef4444', 
+                padding: 10, 
+                borderRadius: 8, 
+                alignSelf: 'center', 
+                marginBottom: 15,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8
+            }}
         >
-          <TouchableWithoutFeedback>
-            <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>בחר חוף</Text>
-                <ScrollView style={styles.modalScrollView} contentContainerStyle={{flexGrow: 1}}>
-                {availableBeaches.map(beach => (
-                    <TouchableOpacity
-                    key={beach}
-                    style={styles.modalItem}
-                    onPress={() => {
-                        setSelectedBeach(beach);
-                        setShowBeachSelector(false);
-                    }}
-                    >
-                    <Text style={styles.modalText}>{BEACH_TRANSLATIONS[beach] || beach}</Text>
-                    </TouchableOpacity>
-                ))}
-                </ScrollView>
-            </View>
-          </TouchableWithoutFeedback>
+            <LogOut color="white" size={18} />
+            <Text style={{ color: 'white', fontWeight: 'bold' }}>התנתק (לבדיקה)</Text>
         </TouchableOpacity>
-      </Modal>
+        {/* 👆 סוף כפתור התנתקות */}
 
-      {currentStatus ? (
-        <>
-          <View style={styles.headerRow}>
-            {/* ... שאר הקוד של הנתונים נשאר זהה ... */}
-            <View>
-              <Text style={styles.lastUpdateTitle}>עדכון אחרון</Text>
-              <Text style={styles.lastUpdateTime}>
-                {new Date(currentStatus.timestamp).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
-              </Text>
-            </View>
-            <View style={styles.liveBadge}>
-              <View style={styles.liveDot} />
-              <Text style={styles.liveText}>LIVE</Text>
-            </View>
-          </View>
-
-          <View style={styles.statsGrid}>
-             <View style={styles.statCard}>
-              <Users color="#38bdf8" size={32} />
-              <Text style={styles.statValue}>{currentStatus.surfer_count}</Text>
-              <Text style={styles.statLabel}>גולשים</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Waves color="#38bdf8" size={32} />
-              <Text style={styles.statValue}>{currentStatus.wave_height}m</Text>
-              <Text style={styles.statLabel}>גובה גל</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Wind color="#38bdf8" size={32} />
-              <Text style={styles.statValue}>{currentStatus.wind_speed}</Text>
-              <Text style={styles.statLabel}>קמ"ש רוח</Text>
-            </View>
-          </View>
-        </>
-      ) : (
-        <View style={{ flex: 1, height: 500, backgroundColor: '#ffffff' }} />
-      )}
-
-      {data.length > 0 && (
-        <View style={styles.leaderboardCard}>
-          <Text style={styles.leaderboardTitle}>👥 החופים העמוסים ביותר</Text>
-          {availableBeaches.map(beach => {
-            const beachReadings = data.filter(r => r.beach_name === beach);
-            const lastReading = beachReadings[0]; 
-            return lastReading ? { ...lastReading, name: beach } : null;
-          }).filter(Boolean)
-            .sort((a, b) => b.surfer_count - a.surfer_count)
-            .slice(0, 5)
-            .map((beach, index) => (
-              <View key={beach.name} style={styles.leaderboardRow}>
-                 <Text style={styles.rank}>#{index + 1}</Text>
-                 <Text style={styles.rowName}>{BEACH_TRANSLATIONS[beach.name] || beach.name}</Text>
-                 <Text style={styles.rowValue}>{beach.surfer_count} גולשים</Text>
-              </View>
-            ))}
+        <View style={{ marginBottom: 20 }}>
+            <Text style={styles.sectionTitle}>בחר חוף לצפייה:</Text>
+            <TouchableOpacity
+            style={styles.selectorButton}
+            onPress={() => setShowBeachSelector(true)}
+            >
+            <Text style={styles.selectorText}>
+                {selectedBeach ? (BEACH_TRANSLATIONS[selectedBeach] || selectedBeach) : "טוען..."}
+            </Text>
+            <ChevronDown color="#94a3b8" size={20} />
+            </TouchableOpacity>
         </View>
-      )}
 
-      {/* כפתור הפידבק - מופיע רק אחרי שהטעינה הסתיימה כדי למנוע קפיצות */}
-      {!loading && (
-        <TouchableOpacity 
-          style={{
-            marginTop: 20,
-            marginBottom: 40,
-            backgroundColor: '#1e293b',
-            padding: 15,
-            borderRadius: 12,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1,
-            borderColor: '#334155',
-            gap: 15
-          }}
-          onPress={() => setFeedbackVisible(true)}
+        <Modal
+            transparent={true}
+            visible={showBeachSelector}
+            animationType="fade"
+            onRequestClose={() => setShowBeachSelector(false)}
         >
-          <MessageCircle size={20} color="#3b82f6" />
-          <Text style={{ color: '#f8fafc', fontWeight: 'bold' }}>יש לך רעיון לשיפור? לחץ כאן</Text>
-        </TouchableOpacity>
-      )}
+            <TouchableOpacity 
+                style={styles.modalOverlay} 
+                activeOpacity={1} 
+                onPress={() => setShowBeachSelector(false)}
+            >
+            <TouchableWithoutFeedback>
+                <View style={[styles.modalContent, isDesktop && { width: '40%', maxHeight: '70%' }]}>
+                    <Text style={styles.modalTitle}>בחר חוף</Text>
+                    <ScrollView style={styles.modalScrollView} contentContainerStyle={{flexGrow: 1}}>
+                    {availableBeaches.map(beach => (
+                        <TouchableOpacity
+                        key={beach}
+                        style={styles.modalItem}
+                        onPress={() => {
+                            setSelectedBeach(beach);
+                            setShowBeachSelector(false);
+                        }}
+                        >
+                        <Text style={styles.modalText}>{BEACH_TRANSLATIONS[beach] || beach}</Text>
+                        </TouchableOpacity>
+                    ))}
+                    </ScrollView>
+                </View>
+            </TouchableWithoutFeedback>
+            </TouchableOpacity>
+        </Modal>
 
-      <FeedbackModal 
-        visible={isFeedbackVisible} 
-        onClose={() => setFeedbackVisible(false)} 
-      />
+        {currentStatus ? (
+            <>
+            <View style={styles.headerRow}>
+                <View>
+                <Text style={styles.lastUpdateTitle}>עדכון אחרון</Text>
+                <Text style={styles.lastUpdateTime}>
+                    {new Date(currentStatus.timestamp).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                </Text>
+                </View>
+                <View style={styles.liveBadge}>
+                <View style={styles.liveDot} />
+                <Text style={styles.liveText}>LIVE</Text>
+                </View>
+            </View>
 
+            <View style={[styles.statsGrid, isDesktop && { justifyContent: 'space-between' }]}>
+                <View style={[styles.statCard, isDesktop && { flex: 1, marginHorizontal: 5 }]}>
+                <Users color="#38bdf8" size={32} />
+                <Text style={styles.statValue}>{getSurferRange(currentStatus.surfer_count)}</Text>
+                <Text style={styles.statLabel}>גולשים</Text>
+                </View>
+                <View style={[styles.statCard, isDesktop && { flex: 1, marginHorizontal: 5 }]}>
+                <Waves color="#38bdf8" size={32} />
+                <Text style={styles.statValue}>{currentStatus.wave_height}m</Text>
+                <Text style={styles.statLabel}>גובה גל</Text>
+                </View>
+                <View style={[styles.statCard, isDesktop && { flex: 1, marginHorizontal: 5 }]}>
+                <Wind color="#38bdf8" size={32} />
+                <Text style={styles.statValue}>{currentStatus.wind_speed}</Text>
+                <Text style={styles.statLabel}>קמ"ש רוח</Text>
+                </View>
+            </View>
+            </>
+        ) : (
+            <View style={{ flex: 1, height: 500, backgroundColor: '#ffffff', borderRadius: 16 }} />
+        )}
+
+        {data.length > 0 && (
+            <View style={styles.leaderboardCard}>
+            <Text style={styles.leaderboardTitle}>👥 החופים העמוסים ביותר</Text>
+            {availableBeaches.map(beach => {
+                const beachReadings = data.filter(r => r.beach_name === beach);
+                const lastReading = beachReadings[0]; 
+                return lastReading ? { ...lastReading, name: beach } : null;
+            }).filter(Boolean)
+                .sort((a, b) => b.surfer_count - a.surfer_count)
+                .slice(0, 5)
+                .map((beach, index) => (
+                <View key={beach.name} style={styles.leaderboardRow}>
+                    <Text style={styles.rank}>#{index + 1}</Text>
+                    <Text style={styles.rowName}>{BEACH_TRANSLATIONS[beach.name] || beach.name}</Text>
+                    <Text style={styles.rowValue}>{getSurferRange(beach.surfer_count)} גולשים</Text>
+                </View>
+                ))}
+            </View>
+        )}
+
+        {!loading && (
+            <>
+                <TouchableOpacity 
+                style={{
+                    marginTop: 20,
+                    backgroundColor: '#1e293b',
+                    padding: 15,
+                    borderRadius: 12,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: 1,
+                    borderColor: '#334155',
+                    gap: 15
+                }}
+                onPress={() => setFeedbackVisible(true)}
+                >
+                <MessageCircle size={20} color="#3b82f6" />
+                <Text style={{ color: '#f8fafc', fontWeight: 'bold' }}>יש לך רעיון לשיפור? לחץ כאן</Text>
+                </TouchableOpacity>
+
+                <View style={{ marginTop: 16, alignItems: 'center', paddingBottom: 20 }}>
+                    <Text style={{ color: '#64748b', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
+                        💡 טיפ: לחוויה אידיאלית ומסך מלא
+                    </Text>
+                    <Text style={{ color: '#64748b', fontSize: 12, textAlign: 'center', marginTop: 4 }}>
+                        מומלץ להוסיף את האפליקציה למסך הבית
+                    </Text>
+                    <Text style={{ color: '#475569', fontSize: 11, textAlign: 'center', marginTop: 4 }}>
+                        (אייפון: שתף ⭠ הוסף למסך הבית | אנדרואיד: תפריט ⭠ התקן אפליקציה)
+                    </Text>
+                </View>
+            </>
+        )}
+
+        <FeedbackModal 
+            visible={isFeedbackVisible} 
+            onClose={() => setFeedbackVisible(false)} 
+        />
+      </ResponsiveContainer>
     </ScrollView>
   );
 
   const renderStats = () => (
     <ScrollView contentContainerStyle={styles.scrollContent}>
-      <Text style={styles.pageTitle}>תחזית חכמה</Text>
-      <CrowdForecast />
+      <ResponsiveContainer>
+        <Text style={styles.pageTitle}>תחזית חכמה</Text>
+        <CrowdForecast />
+      </ResponsiveContainer>
     </ScrollView>
   );
 
@@ -300,7 +353,7 @@ export default function HomeScreen() {
         </MapView>
 
         {selectedMapMarker && (
-          <View style={styles.floatingCard}>
+          <View style={[styles.floatingCard, isDesktop && { width: 350, left: 20, right: 'auto' }]}>
              <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15}}>
                 <Text style={{fontSize: 18, fontWeight: 'bold', color: '#1e293b'}}>
                   {BEACH_TRANSLATIONS[selectedMapMarker]}
@@ -314,7 +367,7 @@ export default function HomeScreen() {
                <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
                   <View style={{alignItems: 'center', flex: 1}}>
                       <Users color="#38bdf8" size={24} />
-                      <Text style={{fontWeight: 'bold', marginTop: 4, fontSize: 16}}>{selectedStatus.surfer_count}</Text>
+                      <Text style={{fontWeight: 'bold', marginTop: 4, fontSize: 16}}>{getSurferRange(selectedStatus.surfer_count)}</Text>
                       <Text style={{fontSize: 12, color: '#64748b'}}>גולשים</Text>
                   </View>
                   <View style={{alignItems: 'center', flex: 1, borderRightWidth: 1, borderLeftWidth: 1, borderColor: '#e2e8f0'}}>
@@ -346,6 +399,13 @@ export default function HomeScreen() {
   return (
     <View style={{ flex: 1 }}>
       <LinearGradient colors={['#0f172a', '#1e293b']} style={styles.fullScreenBackground} />
+      
+      <Head>
+        <title>WAVEZ PRO</title>
+        <meta name="description" content="WAVEZ PRO - Surf Forecast" />
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+      </Head>
+
       <StatusBar barStyle="light-content" translucent={true} backgroundColor="transparent" />
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.appHeader}>
@@ -376,6 +436,15 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  desktopContainer: {
+    width: '100%',
+    maxWidth: 800, 
+    alignSelf: 'center', 
+  },
+  mobileContainer: {
+    width: '100%', 
+  },
+
   container: { flex: 1 }, 
   fullScreenBackground: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
   mapContainer: { flex: 1 },

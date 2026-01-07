@@ -29,7 +29,7 @@
       ]
     },
     "web": {
-      "favicon": "./assets/icon.png",
+      "favicon": "./assets/favicon.png",
       "display": "standalone",
       "backgroundColor": "#0f172a",
       "description": "WAVEZ PRO",
