@@ -6,8 +6,6 @@ import 'react-native-reanimated';
 import { I18nManager, Platform } from 'react-native';
 import { useEffect, useState } from 'react'; // הוספנו את useState
 import { useColorScheme } from '@/hooks/use-color-scheme';
-
-// 👇 ייבוא הרכיבים החדשים (וודא שהנתיבים נכונים לפרויקט שלך)
 import { supabase } from '../supabase'; 
 import Auth from '../components/Auth'; 
 
