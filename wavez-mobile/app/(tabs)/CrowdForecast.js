@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TouchableWithoutFeedback, Dimensions } from 'react-native';
-import { supabase } from '../../supabase'; 
+import { supabase } from '../../supabase';
 import { LineChart } from "react-native-chart-kit";
 
 // חישוב רוחב מסך
@@ -12,16 +12,11 @@ const BEACH_TRANSLATIONS = {
   "Haifa_Meridian": "חיפה - מרידיאן",
   "Krayot_MagicBoards": "קריות - מג'יק",
   "Maagan_Michael": "מעגן מיכאל",
-  "Manau_neurim_netanya": "נתניה - נעורים",
-  "Netanya_Poleg": "נתניה - פולג",
   "Herzliya_Marina": "הרצליה - מרינה",
-  "Herzliya_Zvulun": "הרצליה - זבולון",
   "Herzliya_Dromi": "הרצליה - דרומי",
   "TLV_Dolphinarium": "תל אביב - דולפינריום",
   "Ma'aravi_tel_aviv": "תל אביב - מערבי",
-  "TLV_Hilton_B": "תל אביב - הילטון ב'",
-  "TLV_Hilton_A": "תל אביב - הילטון א'",
-  "TLV_Hilton_A_Lefts": "תל אביב - הילטון שמאל"
+  "TLV_Hilton": "תל אביב - הילטון'",
 };
 
 const AVAILABLE_BEACHES = Object.keys(BEACH_TRANSLATIONS);
@@ -145,7 +140,7 @@ const CrowdForecast = () => {
       {
         data: predictions.length > 0 ? predictions.map(p => p.predictedCrowd) : [0],
         color: (opacity = 1) => `rgba(56, 189, 248, ${opacity})`,
-        strokeWidth: 3 
+        strokeWidth: 3
       }
     ],
   };
@@ -172,15 +167,15 @@ const CrowdForecast = () => {
         animationType="fade"
         onRequestClose={() => setShowBeachSelector(false)}
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1} 
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
           onPress={() => setShowBeachSelector(false)}
         >
           <TouchableWithoutFeedback>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>בחר חוף</Text>
-              <ScrollView style={styles.modalScrollView} contentContainerStyle={{flexGrow: 1}}>
+              <ScrollView style={styles.modalScrollView} contentContainerStyle={{ flexGrow: 1 }}>
                 {AVAILABLE_BEACHES.map((beach, index) => (
                   <TouchableOpacity
                     key={index}
@@ -217,15 +212,15 @@ const CrowdForecast = () => {
         animationType="fade"
         onRequestClose={() => setShowDateSelector(false)}
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1} 
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
           onPress={() => setShowDateSelector(false)}
         >
           <TouchableWithoutFeedback>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>בחר תאריך</Text>
-              <ScrollView style={styles.modalScrollView} contentContainerStyle={{flexGrow: 1}}>
+              <ScrollView style={styles.modalScrollView} contentContainerStyle={{ flexGrow: 1 }}>
                 {dateOptions.map((date, index) => (
                   <TouchableOpacity
                     key={index}
@@ -251,85 +246,85 @@ const CrowdForecast = () => {
         </View>
       ) : (
         <View style={styles.chartWrapper}>
-           <Text style={styles.chartTitle}>מגמת עומס יומית</Text>
-           
-           {predictions.length > 0 ? (
-                // 👇 כאן השינוי: עטפנו את הגרף ב-View שדוחף אותו שמאלה
-                <View style={{ paddingRight: 25 }}>
-                    <LineChart
-                        data={chartData}
-                        width={SCREEN_WIDTH - 40} 
-                        height={220}
-                        yAxisLabel=""
-                        yAxisSuffix=""
-                        yAxisInterval={1}
-                        fromZero={true}
-                        renderDotContent={({x, y, index, indexData}) => {
-                            if (indexData === 0) return null;
-                            
-                            return (
-                                <View
-                                    key={index}
-                                    style={{
-                                        position: 'absolute',
-                                        top: y - 20,
-                                        left: x - 10,
-                                        width: 20,
-                                        alignItems: 'center'
-                                    }}
-                                >
-                                    <Text style={{fontSize: 10, color: '#38bdf8', fontWeight: 'bold'}}>
-                                        {Math.round(indexData)}
-                                    </Text>
-                                </View>
-                            );
-                        }}
-                        chartConfig={{
-                            backgroundColor: "transparent",
-                            backgroundGradientFrom: "transparent",
-                            backgroundGradientTo: "transparent",
-                            backgroundGradientFromOpacity: 0,
-                            backgroundGradientToOpacity: 0,
-                            decimalPlaces: 0, 
-                            color: (opacity = 1) => `rgba(56, 189, 248, ${opacity})`,
-                            labelColor: (opacity = 1) => `rgba(148, 163, 184, ${opacity})`,
-                            style: { 
-                                borderRadius: 16,
-                                paddingRight: 0, 
-                                paddingLeft: 0
-                            },
-                            propsForDots: {
-                                r: "4",
-                                strokeWidth: "2",
-                                stroke: "#0f172a"
-                            },
-                            propsForBackgroundLines: {
-                                stroke: "#334155", 
-                                strokeWidth: 0.5,
-                                strokeDasharray: ""
-                            }
-                        }}
-                        bezier
-                        style={{
-                            marginVertical: 8,
-                            borderRadius: 16
-                            // הסרנו מכאן את marginRight כדי למנוע את השגיאה
-                        }}
-                        withInnerLines={true}
-                        withOuterLines={false}
-                    />
-                </View>
-            ) : (
-                <View style={{height: 220, justifyContent: 'center', alignItems: 'center'}}>
-                    <Text style={styles.noDataText}>אין נתונים ליום זה</Text>
-                </View>
-            )}
-           
-           <View style={styles.summaryContainer}>
-              <Text style={styles.summaryText}>
-                 * המספרים על הגרף מייצגים כמות גולשים משוערת
-              </Text>
-           </View>
+          <Text style={styles.chartTitle}>מגמת עומס יומית</Text>
+
+          {predictions.length > 0 ? (
+            // 👇 כאן השינוי: עטפנו את הגרף ב-View שדוחף אותו שמאלה
+            <View style={{ paddingRight: 25 }}>
+              <LineChart
+                data={chartData}
+                width={SCREEN_WIDTH - 40}
+                height={220}
+                yAxisLabel=""
+                yAxisSuffix=""
+                yAxisInterval={1}
+                fromZero={true}
+                renderDotContent={({ x, y, index, indexData }) => {
+                  if (indexData === 0) return null;
+
+                  return (
+                    <View
+                      key={index}
+                      style={{
+                        position: 'absolute',
+                        top: y - 20,
+                        left: x - 10,
+                        width: 20,
+                        alignItems: 'center'
+                      }}
+                    >
+                      <Text style={{ fontSize: 10, color: '#38bdf8', fontWeight: 'bold' }}>
+                        {Math.round(indexData)}
+                      </Text>
+                    </View>
+                  );
+                }}
+                chartConfig={{
+                  backgroundColor: "transparent",
+                  backgroundGradientFrom: "transparent",
+                  backgroundGradientTo: "transparent",
+                  backgroundGradientFromOpacity: 0,
+                  backgroundGradientToOpacity: 0,
+                  decimalPlaces: 0,
+                  color: (opacity = 1) => `rgba(56, 189, 248, ${opacity})`,
+                  labelColor: (opacity = 1) => `rgba(148, 163, 184, ${opacity})`,
+                  style: {
+                    borderRadius: 16,
+                    paddingRight: 0,
+                    paddingLeft: 0
+                  },
+                  propsForDots: {
+                    r: "4",
+                    strokeWidth: "2",
+                    stroke: "#0f172a"
+                  },
+                  propsForBackgroundLines: {
+                    stroke: "#334155",
+                    strokeWidth: 0.5,
+                    strokeDasharray: ""
+                  }
+                }}
+                bezier
+                style={{
+                  marginVertical: 8,
+                  borderRadius: 16
+                  // הסרנו מכאן את marginRight כדי למנוע את השגיאה
+                }}
+                withInnerLines={true}
+                withOuterLines={false}
+              />
+            </View>
+          ) : (
+            <View style={{ height: 220, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={styles.noDataText}>אין נתונים ליום זה</Text>
+            </View>
+          )}
+
+          <View style={styles.summaryContainer}>
+            <Text style={styles.summaryText}>
+              * המספרים על הגרף מייצגים כמות גולשים משוערת
+            </Text>
+          </View>
         </View>
       )}
     </View>
@@ -338,21 +333,21 @@ const CrowdForecast = () => {
 
 const styles = StyleSheet.create({
   container: { marginTop: 20, paddingHorizontal: 20 },
-  
+
   selectorLabel: { color: '#94a3b8', marginBottom: 8, fontSize: 14, textAlign: 'right' },
-  
+
   selectorButton: {
-    backgroundColor: '#1e293b', 
-    flexDirection: 'row', 
+    backgroundColor: '#1e293b',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#334155',
   },
   selectorText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
   dropdownArrow: { color: '#94a3b8', fontSize: 14, fontWeight: 'bold' },
-  
+
   loadingContainer: { alignItems: 'center', paddingVertical: 30 },
   loadingText: { color: '#94a3b8', marginTop: 10, fontSize: 14 },
-  
+
   chartWrapper: {
     marginBottom: 30,
     marginTop: 10,
@@ -368,7 +363,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     width: '100%'
   },
-  
+
   noDataText: {
     color: 'white',
     textAlign: 'center'
@@ -392,7 +387,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#1e293b', textAlign: 'center', marginBottom: 15 },
   modalScrollView: { width: '100%' },
-  modalItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f1f5f9', alignItems: 'flex-start' }, 
+  modalItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f1f5f9', alignItems: 'flex-start' },
   modalText: { fontSize: 18, color: '#334155', textAlign: 'right' },
 });
 

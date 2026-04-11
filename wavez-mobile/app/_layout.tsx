@@ -6,9 +6,6 @@ import 'react-native-reanimated';
 import { I18nManager, Platform } from 'react-native';
 import { useEffect, useState } from 'react'; // הוספנו את useState
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { supabase } from '../supabase'; 
-import Auth from '../components/Auth'; 
-
 export const unstable_settings = {
   anchor: '(tabs)',
 };
@@ -16,23 +13,7 @@ export const unstable_settings = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   
-  // 👇 משתנים לניהול המשתמש
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // 👇 אפקט 1: בדיקת התחברות (Supabase)
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
-
-    supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-  }, []);
-
-  // 👇 אפקט 2: הגדרות ווב, RTL ועיצוב (הקוד המקורי שלך נשמר במלואו)
+  // 👇 אפקט: הגדרות ווב, RTL ועיצוב
   useEffect(() => {
     // 1. כפיית RTL
     if (!I18nManager.isRTL) {
@@ -108,20 +89,6 @@ export default function RootLayout() {
         document.head.appendChild(manifestLink);
     }
   }, []);
-
-  // ⏳ בזמן שהמערכת בודקת משתמש - אל תציג כלום (הרקע של ה-HTML יוצג)
-  if (loading) return null;
-
-  // 🔒 אם אין משתמש מחובר - תציג את מסך ההתחברות בלבד
-  if (!session) {
-    return (
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <Auth />
-        </ThemeProvider>
-    );
-  }
-
-  // ✅ אם המשתמש מחובר - הצג את האפליקציה הרגילה
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Head>
