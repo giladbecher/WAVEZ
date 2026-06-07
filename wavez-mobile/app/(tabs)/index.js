@@ -125,9 +125,8 @@ export default function HomeScreen() {
   }, []);
 
   const availableBeaches = useMemo(() => {
-    const uniqueNames = [...new Set(data.map(item => item.beach_name))];
-    return uniqueNames.sort();
-  }, [data]);
+    return Object.keys(BEACH_TRANSLATIONS);
+  }, []);
 
   const beachData = useMemo(() => {
     if (!selectedBeach) return [];
