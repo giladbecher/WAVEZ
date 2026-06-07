@@ -1,9 +1,10 @@
 // @ts-nocheck
 import { LinearGradient } from 'expo-linear-gradient';
 import Head from 'expo-router/head';
-import { ChevronDown, Home, LogOut, MapPin, TrendingUp, Users, Waves, Wind } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { ChevronDown, Home, LogOut, MapPin, TrendingUp, Users, Waves, Wind, X } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { I18nManager, Modal, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, useWindowDimensions, View } from 'react-native';
+import { I18nManager, Modal, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, useWindowDimensions, View, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker } from '../../components/AppMap';
 import { supabase } from '../../supabase';
@@ -22,11 +23,12 @@ const BEACH_TRANSLATIONS = {
   "Haifa_Meridian": "חיפה - מרידיאן",
   "Krayot_MagicBoards": "קריות - מג'יק",
   "Maagan_Michael": "מעגן מיכאל",
+  "Beit_Yanai": "בית ינאי",
   "Herzliya_Marina": "הרצליה - מרינה",
   "Herzliya_Dromi": "הרצליה - דרומי",
   "TLV_Dolphinarium": "תל אביב - דולפינריום",
   "Ma'aravi_tel_aviv": "תל אביב - מערבי",
-  "TLV_Hilton": "תל אביב - הילטון '",
+  "TLV_Hilton": "תל אביב - הילטון",
 };
 
 const BEACH_COORDINATES = {
@@ -35,6 +37,7 @@ const BEACH_COORDINATES = {
   "Haifa_Meridian": [32.807972, 34.955192],
   "Krayot_MagicBoards": [32.849163, 35.059862],
   "Maagan_Michael": [32.5593, 34.9048],
+  "Beit_Yanai": [32.387333, 34.862500],
   "Herzliya_Marina": [32.165986, 34.795504],
   "Herzliya_Dromi": [32.156685, 34.793401],
   "TLV_Dolphinarium": [32.070084, 34.761568],
@@ -50,6 +53,39 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState('home');
   const [showBeachSelector, setShowBeachSelector] = useState(false);
   const [selectedMapMarker, setSelectedMapMarker] = useState(null);
+
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackName, setFeedbackName] = useState('');
+  const [feedbackEmail, setFeedbackEmail] = useState('');
+  const [feedbackPhone, setFeedbackPhone] = useState('');
+  const [feedbackDescription, setFeedbackDescription] = useState('');
+  const [feedbackSent, setFeedbackSent] = useState(false);
+  const [sendingFeedback, setSendingFeedback] = useState(false);
+
+  const handleSendFeedback = async () => {
+    if (!feedbackName || !feedbackEmail) {
+      alert("נא למלא שם ומייל");
+      return;
+    }
+    setSendingFeedback(true);
+    try {
+      const payload = {
+        name: feedbackName,
+        email: feedbackEmail,
+        phone: feedbackPhone,
+        feedback: feedbackDescription,
+      };
+      await fetch("https://script.google.com/macros/s/AKfycbyHaxbaGvgC1jThx2K_KwQrCgk0tD6eo0ARNPORZd0LJpz9LZzcgJW2eD2Hram6Usv2/exec", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      setFeedbackSent(true);
+    } catch (e) {
+      alert("אירעה שגיאה. נסה שוב.");
+    } finally {
+      setSendingFeedback(false);
+    }
+  };
 
 
   const { width } = useWindowDimensions();
@@ -242,6 +278,18 @@ export default function HomeScreen() {
               <Text style={{ color: '#475569', fontSize: 11, textAlign: 'center', marginTop: 4 }}>
                 (אייפון: שתף ⭠ הוסף למסך הבית | אנדרואיד: תפריט ⭠ התקן אפליקציה)
               </Text>
+
+              <TouchableOpacity
+                style={styles.feedbackButton}
+                onPress={() => setShowFeedbackModal(true)}
+              >
+                <Text style={styles.feedbackButtonText}>זיהית באג? נשמח למשוב שלך!</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push('/terms')} style={{ marginTop: 15 }}>
+                <Text style={{ color: '#94a3b8', fontSize: 12, textAlign: 'center', textDecorationLine: 'underline' }}>
+                  תנאי שימוש ונגישות
+                </Text>
+              </TouchableOpacity>
             </View>
           </>
         )}
@@ -380,6 +428,98 @@ export default function HomeScreen() {
             <Text style={[styles.navText, activeTab === 'stats' && styles.activeNavText]}>תחזית</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Feedback Modal */}
+        <Modal
+          transparent={true}
+          visible={showFeedbackModal}
+          animationType="fade"
+          onRequestClose={() => setShowFeedbackModal(false)}
+        >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={{ flex: 1 }}
+          >
+            <TouchableOpacity
+              style={styles.modalOverlay}
+              activeOpacity={1}
+              onPress={() => setShowFeedbackModal(false)}
+            >
+              <TouchableWithoutFeedback>
+                <View style={[styles.feedbackModalContent, isDesktop && { width: 500 }]}>
+                  <TouchableOpacity
+                    style={styles.closeModalButton}
+                    onPress={() => {
+                      setShowFeedbackModal(false);
+                      setTimeout(() => {
+                        setFeedbackSent(false);
+                        setFeedbackName('');
+                        setFeedbackEmail('');
+                        setFeedbackPhone('');
+                        setFeedbackDescription('');
+                      }, 500); // reset after closing
+                    }}
+                  >
+                    <X color="#94a3b8" size={24} />
+                  </TouchableOpacity>
+
+                  {feedbackSent ? (
+                    <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                      <Text style={{ color: 'white', fontSize: 20, fontWeight: 'bold' }}>תודה על המשוב!</Text>
+                    </View>
+                  ) : (
+                    <>
+                      <Text style={[styles.modalTitle, { color: 'white', marginBottom: 20 }]}>ראית משהו לשיפור?</Text>
+                      <TextInput
+                        style={styles.inputField}
+                        placeholder="שם (חובה)"
+                        placeholderTextColor="#64748b"
+                        value={feedbackName}
+                        onChangeText={setFeedbackName}
+                      />
+                      <TextInput
+                        style={styles.inputField}
+                        placeholder="מייל (חובה)"
+                        placeholderTextColor="#64748b"
+                        keyboardType="email-address"
+                        value={feedbackEmail}
+                        onChangeText={setFeedbackEmail}
+                      />
+                      <TextInput
+                        style={styles.inputField}
+                        placeholder="טלפון (אופציונלי)"
+                        placeholderTextColor="#64748b"
+                        keyboardType="numeric"
+                        value={feedbackPhone}
+                        onChangeText={setFeedbackPhone}
+                      />
+                      <TextInput
+                        style={[styles.inputField, { height: 100, textAlignVertical: 'top' }]}
+                        placeholder="תיאור הפנייה"
+                        placeholderTextColor="#64748b"
+                        multiline
+                        value={feedbackDescription}
+                        onChangeText={setFeedbackDescription}
+                      />
+                      <TouchableOpacity
+                        style={styles.submitButton}
+                        onPress={handleSendFeedback}
+                        disabled={sendingFeedback}
+                      >
+                        {sendingFeedback ? (
+                          <ActivityIndicator color="#0f172a" />
+                        ) : (
+                          <Text style={styles.submitButtonText}>שלח</Text>
+                        )}
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
+              </TouchableWithoutFeedback>
+            </TouchableOpacity>
+          </KeyboardAvoidingView>
+        </Modal>
+
       </SafeAreaView>
     </View>
   );
@@ -490,5 +630,66 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     borderWidth: 1,
     borderColor: '#f1f5f9',
+  },
+  feedbackButton: {
+    marginTop: 20,
+    marginBottom: 5,
+    backgroundColor: '#1e293b',
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    width: '80%',
+    maxWidth: 300,
+  },
+  feedbackButtonText: {
+    color: '#38bdf8',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  feedbackModalContent: {
+    backgroundColor: '#1e293b',
+    borderRadius: 16,
+    width: '90%',
+    padding: 24,
+    borderWidth: 1,
+    borderColor: '#334155',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  closeModalButton: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    zIndex: 10,
+    padding: 5,
+  },
+  inputField: {
+    backgroundColor: '#0f172a',
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 8,
+    color: 'white',
+    padding: 12,
+    marginBottom: 12,
+    fontSize: 14,
+    textAlign: 'right',
+  },
+  submitButton: {
+    backgroundColor: '#38bdf8',
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  submitButtonText: {
+    color: '#0f172a',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

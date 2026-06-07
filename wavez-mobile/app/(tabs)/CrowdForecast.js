@@ -12,6 +12,7 @@ const BEACH_TRANSLATIONS = {
   "Haifa_Meridian": "חיפה - מרידיאן",
   "Krayot_MagicBoards": "קריות - מג'יק",
   "Maagan_Michael": "מעגן מיכאל",
+  "Beit_Yanai": "בית ינאי",
   "Herzliya_Marina": "הרצליה - מרינה",
   "Herzliya_Dromi": "הרצליה - דרומי",
   "TLV_Dolphinarium": "תל אביב - דולפינריום",

@@ -73,6 +73,7 @@ beaches_config = {
     
     # שרון (כולל מרינה שעברה לצילום מסך)
     "Herzliya_Marina": {"page_url": "https://beachcam.co.il/marina.html", "type": "browser_screenshot"},
+    "Beit_Yanai": {"page_url": "https://kookint.com/pages/%D7%9E%D7%A6%D7%9C%D7%9E%D7%AA-%D7%97%D7%95%D7%A3-%D7%91%D7%99%D7%AA-%D7%99%D7%A0%D7%90%D7%99", "type": "browser_screenshot"},
     "Manau_neurim_netanya": {"url": "https://vod.wavehub.co.il/live/_definst_/Manau_SD.stream/chunklist_w1769995696.m3u8", "type": "video"},
     "Netanya_Poleg": {"url": "https://vod.wavehub.co.il/live/_definst_/Poleg_SD.stream/chunklist_w741927332.m3u8", "type": "video"},
     "Herzliya_Zvulun": {"url": "https://vod.wavehub.co.il/live/_definst_/Zvulun_576p.stream/chunklist_w1928512222.m3u8", "type": "video"},
