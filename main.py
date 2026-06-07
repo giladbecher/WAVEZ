@@ -131,10 +131,99 @@ def capture_screenshot_with_driver(driver, page_url):
     try:
         driver.get(page_url)
         time.sleep(8)  # Wait for stream to load
-        
+
+        # ── Beit Yanai special handling ────────────────────────────────────────
+        # The kookint page is a long e-commerce page; the Surfline player is
+        # far below the fold. We must scroll to it and dismiss any play overlay
+        # before taking the screenshot.
+        if 'kookint' in page_url:
+            try:
+                # 1. Wait for the player container / iframe to exist in the DOM
+                player_selectors = [
+                    "iframe[src*='surfline']",
+                    "iframe[src*='ipcamlive']",
+                    "iframe[src*='embed']",
+                    ".sl-player",
+                    ".video-container",
+                    "video",
+                ]
+                player_el = None
+                for sel in player_selectors:
+                    try:
+                        player_el = WebDriverWait(driver, 5).until(
+                            EC.presence_of_element_located((By.CSS_SELECTOR, sel))
+                        )
+                        if player_el:
+                            break
+                    except:
+                        continue
+
+                # 2. Scroll the player into the center of the viewport
+                if player_el:
+                    driver.execute_script(
+                        "arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});",
+                        player_el
+                    )
+                    print(" 📜 Scrolled ", end="")
+                else:
+                    # Fallback: scroll 60 % down the page where the player usually sits
+                    driver.execute_script(
+                        "window.scrollTo({top: document.body.scrollHeight * 0.6, behavior: 'smooth'});"
+                    )
+                    print(" 📜 ScrollFallback ", end="")
+
+                time.sleep(2)  # Let scroll animation settle
+
+                # 3. Dismiss play overlay / "CONTINUE WATCHING" button if present
+                play_selectors = [
+                    # Surfline-specific classes
+                    ".sl-play-button",
+                    ".sl-cta-button",
+                    # Generic text-based button search (JS handles this below)
+                ]
+                # Try CSS selectors first
+                clicked = False
+                for sel in play_selectors:
+                    try:
+                        btn = driver.find_element(By.CSS_SELECTOR, sel)
+                        driver.execute_script("arguments[0].click();", btn)
+                        clicked = True
+                        print(" ▶️ PlayBtn ", end="")
+                        break
+                    except:
+                        continue
+
+                # If no CSS match, search all buttons/spans for matching text
+                if not clicked:
+                    try:
+                        keywords = ["CONTINUE WATCHING", "Continue Watching", "Play", "PLAY"]
+                        buttons = driver.find_elements(
+                            By.XPATH,
+                            "//*[self::button or self::span or self::div]"
+                            "[contains(translate(normalize-space(text()),"
+                            " 'abcdefghijklmnopqrstuvwxyz',"
+                            " 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'),'WATCHING')"
+                            " or contains(translate(normalize-space(text()),"
+                            " 'abcdefghijklmnopqrstuvwxyz',"
+                            " 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'),'PLAY')]"
+                        )
+                        if buttons:
+                            driver.execute_script("arguments[0].click();", buttons[0])
+                            print(" ▶️ TextBtn ", end="")
+                    except:
+                        pass  # No play button found — stream may auto-play; continue
+
+                # 4. Buffer time for the live feed to render frames
+                time.sleep(5)
+
+            except Exception as beit_err:
+                print(f" ⚠️ BeitYanai-prep warning: {str(beit_err)[:60]} ", end="")
+        # ── End Beit Yanai special handling ───────────────────────────────────
+
         # Try to capture the specific video element first
         try:
-            possible_selectors = ["iframe[src*='ipcamlive']", "video", ".video-js", "#videoPlayer"]
+            possible_selectors = ["iframe[src*='ipcamlive']", "iframe[src*='surfline']",
+                                   "iframe[src*='embed']", "video", ".video-js", "#videoPlayer"]
             target_element = None
             for selector in possible_selectors:
                 try:
@@ -159,6 +248,7 @@ def capture_screenshot_with_driver(driver, page_url):
     except Exception as e:
         print(f" ❌ Error: {str(e)[:50]}")
         return None
+
 
 def get_surf_forecast_open_meteo(lat, lon):
     try:
