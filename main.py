@@ -346,16 +346,43 @@ while True:
             surfer_count = 0
 
             if frame is not None:
+                # Create annotated copy — clean frame stays intact for DB logic
+                annotated_frame = frame.copy()
+                height, width = frame.shape[:2]
+                mid_x, mid_y  = width // 2, height // 2
+                overlap        = 80
+
+                # Offsets (x, y) for each slice, matching process_image_with_slicing order:
+                # Slice 0: Top-Left     Slice 1: Top-Right
+                # Slice 2: Bottom-Left  Slice 3: Bottom-Right
+                slice_offsets = [
+                    (0,                      0),                       # Slice 0 — Top-Left
+                    (max(0, mid_x - overlap), 0),                       # Slice 1 — Top-Right
+                    (0,                      max(0, mid_y - overlap)),  # Slice 2 — Bottom-Left
+                    (max(0, mid_x - overlap), max(0, mid_y - overlap)), # Slice 3 — Bottom-Right
+                ]
+
                 slices = process_image_with_slicing(frame)
-                for slice_img in slices:
+                for i, slice_img in enumerate(slices):
                     results = model.predict(slice_img, conf=CONFIDENCE_THRESHOLD, verbose=False)
                     surfer_count += len(results[0].boxes)
-                
+
+                    # Map each detected box back to full-frame coordinates and draw
+                    x_offset, y_offset = slice_offsets[i]
+                    for box in results[0].boxes:
+                        x1, y1, x2, y2 = map(int, box.xyxy[0].cpu().numpy())
+                        gx1 = x1 + x_offset
+                        gy1 = y1 + y_offset
+                        gx2 = x2 + x_offset
+                        gy2 = y2 + y_offset
+                        cv2.rectangle(annotated_frame, (gx1, gy1), (gx2, gy2), (0, 255, 0), 2)
+
                 print(f"🏄 {surfer_count}")
-                smart_save_image(name, frame, surfer_count)
+                smart_save_image(name, annotated_frame, surfer_count)  # save with boxes
                 save_to_db(name, "Day", surfer_count, cur_wind, cur_wave)
             else:
                 save_to_db(name, "Connection_Error", 0, cur_wind, cur_wave)
+
 
     except Exception as e:
         print(f"\n❌ General Error: {e}")
