@@ -130,100 +130,105 @@ def capture_screenshot_with_driver(driver, page_url):
     print(f"    📸 Screenshot: {page_url}...", end="")
     try:
         driver.get(page_url)
-        time.sleep(8)  # Wait for stream to load
+        time.sleep(8)  # Wait for page + stream to load
 
         # ── Beit Yanai special handling ────────────────────────────────────────
-        # The kookint page is a long e-commerce page; the Surfline player is
-        # far below the fold. We must scroll to it and dismiss any play overlay
-        # before taking the screenshot.
+        # The kookint page is a long e-commerce page with a Surfline iframe
+        # player far below the fold. We scroll to it, then switch INTO the
+        # iframe context to click play, then switch back for the screenshot.
         if 'kookint' in page_url:
             try:
-                # 1. Wait for the player container / iframe to exist in the DOM
-                player_selectors = [
+                # 1. Find the Surfline iframe on the parent page
+                iframe_selectors = [
                     "iframe[src*='surfline']",
-                    "iframe[src*='ipcamlive']",
+                    "iframe[src*='cam']",
                     "iframe[src*='embed']",
-                    ".sl-player",
-                    ".video-container",
-                    "video",
+                    "iframe",  # last resort
                 ]
-                player_el = None
-                for sel in player_selectors:
+                surfline_iframe = None
+                for sel in iframe_selectors:
                     try:
-                        player_el = WebDriverWait(driver, 5).until(
+                        surfline_iframe = WebDriverWait(driver, 8).until(
                             EC.presence_of_element_located((By.CSS_SELECTOR, sel))
                         )
-                        if player_el:
+                        if surfline_iframe:
                             break
                     except:
                         continue
 
-                # 2. Scroll the player into the center of the viewport
-                if player_el:
+                if surfline_iframe:
+                    # 2. Scroll the iframe into the center of the viewport
                     driver.execute_script(
                         "arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});",
-                        player_el
+                        surfline_iframe
                     )
                     print(" 📜 Scrolled ", end="")
+                    time.sleep(2)  # Let scroll settle
+
+                    # 3. Switch INTO the iframe context so we can interact with
+                    #    elements inside it (parent-page clicks won't reach here)
+                    driver.switch_to.frame(surfline_iframe)
+
+                    # 4. Find and click the play button inside the iframe
+                    play_clicked = False
+                    iframe_play_selectors = [
+                        ".sl-play-button",         # Surfline custom class
+                        ".vjs-big-play-button",    # Video.js big play button
+                        "[class*='play-button']",  # Any class containing play-button
+                        "[class*='PlayButton']",
+                        "button[aria-label*='Play']",
+                        "button[title*='Play']",
+                        "button",                  # Last resort: first button found
+                    ]
+                    for sel in iframe_play_selectors:
+                        try:
+                            play_btn = WebDriverWait(driver, 3).until(
+                                EC.presence_of_element_located((By.CSS_SELECTOR, sel))
+                            )
+                            driver.execute_script("arguments[0].click();", play_btn)
+                            play_clicked = True
+                            print(f" ▶️ Clicked({sel}) ", end="")
+                            break
+                        except:
+                            continue
+
+                    if not play_clicked:
+                        print(" ⚠️ No play btn found ", end="")
+
+                    # 5. Switch BACK to parent page before screenshotting
+                    driver.switch_to.default_content()
+
+                    # 6. Buffer time — live stream needs time to decode frames
+                    print(" ⏳ Buffering ", end="")
+                    time.sleep(8)
+
                 else:
-                    # Fallback: scroll 60 % down the page where the player usually sits
+                    # No iframe found — fallback scroll to 60% of page height
                     driver.execute_script(
                         "window.scrollTo({top: document.body.scrollHeight * 0.6, behavior: 'smooth'});"
                     )
                     print(" 📜 ScrollFallback ", end="")
-
-                time.sleep(2)  # Let scroll animation settle
-
-                # 3. Dismiss play overlay / "CONTINUE WATCHING" button if present
-                play_selectors = [
-                    # Surfline-specific classes
-                    ".sl-play-button",
-                    ".sl-cta-button",
-                    # Generic text-based button search (JS handles this below)
-                ]
-                # Try CSS selectors first
-                clicked = False
-                for sel in play_selectors:
-                    try:
-                        btn = driver.find_element(By.CSS_SELECTOR, sel)
-                        driver.execute_script("arguments[0].click();", btn)
-                        clicked = True
-                        print(" ▶️ PlayBtn ", end="")
-                        break
-                    except:
-                        continue
-
-                # If no CSS match, search all buttons/spans for matching text
-                if not clicked:
-                    try:
-                        keywords = ["CONTINUE WATCHING", "Continue Watching", "Play", "PLAY"]
-                        buttons = driver.find_elements(
-                            By.XPATH,
-                            "//*[self::button or self::span or self::div]"
-                            "[contains(translate(normalize-space(text()),"
-                            " 'abcdefghijklmnopqrstuvwxyz',"
-                            " 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'),'WATCHING')"
-                            " or contains(translate(normalize-space(text()),"
-                            " 'abcdefghijklmnopqrstuvwxyz',"
-                            " 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'),'PLAY')]"
-                        )
-                        if buttons:
-                            driver.execute_script("arguments[0].click();", buttons[0])
-                            print(" ▶️ TextBtn ", end="")
-                    except:
-                        pass  # No play button found — stream may auto-play; continue
-
-                # 4. Buffer time for the live feed to render frames
-                time.sleep(5)
+                    time.sleep(5)
 
             except Exception as beit_err:
+                # Safety net — log but never crash the main loop
+                try:
+                    driver.switch_to.default_content()  # ensure we're back on parent
+                except: pass
                 print(f" ⚠️ BeitYanai-prep warning: {str(beit_err)[:60]} ", end="")
         # ── End Beit Yanai special handling ───────────────────────────────────
 
         # Try to capture the specific video element first
         try:
-            possible_selectors = ["iframe[src*='ipcamlive']", "iframe[src*='surfline']",
-                                   "iframe[src*='embed']", "video", ".video-js", "#videoPlayer"]
+            possible_selectors = [
+                "iframe[src*='surfline']",
+                "iframe[src*='ipcamlive']",
+                "iframe[src*='embed']",
+                "iframe[src*='cam']",
+                "video",
+                ".video-js",
+                "#videoPlayer",
+            ]
             target_element = None
             for selector in possible_selectors:
                 try:
@@ -232,7 +237,7 @@ def capture_screenshot_with_driver(driver, page_url):
                     )
                     if target_element: break
                 except: continue
-            
+
             if target_element:
                 png_data = target_element.screenshot_as_png
                 print(" ✅ Frame-Grab ", end="")
@@ -241,7 +246,7 @@ def capture_screenshot_with_driver(driver, page_url):
         except:
             print(" ⚠️ Fallback (Crop) ", end="")
             png_data = driver.get_screenshot_as_png()
-            
+
         nparr = np.frombuffer(png_data, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         return img
