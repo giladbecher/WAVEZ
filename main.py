@@ -356,25 +356,46 @@ while True:
                 # Slice 0: Top-Left     Slice 1: Top-Right
                 # Slice 2: Bottom-Left  Slice 3: Bottom-Right
                 slice_offsets = [
-                    (0,                      0),                       # Slice 0 — Top-Left
-                    (max(0, mid_x - overlap), 0),                       # Slice 1 — Top-Right
-                    (0,                      max(0, mid_y - overlap)),  # Slice 2 — Bottom-Left
-                    (max(0, mid_x - overlap), max(0, mid_y - overlap)), # Slice 3 — Bottom-Right
+                    (0,                       0),                       # Slice 0 — Top-Left
+                    (max(0, mid_x - overlap),  0),                       # Slice 1 — Top-Right
+                    (0,                       max(0, mid_y - overlap)),  # Slice 2 — Bottom-Left
+                    (max(0, mid_x - overlap),  max(0, mid_y - overlap)), # Slice 3 — Bottom-Right
                 ]
+
+                # Static bounding box blacklist — Beit Yanai only.
+                # Wooden poles in the water sit in this pixel region and are
+                # frequently misdetected as surfers. Any detection whose center
+                # falls inside this zone is silently ignored.
+                BEIT_YANAI_POLE_ZONE = {
+                    "x_min": 20,  "x_max": 340,
+                    "y_min": 235, "y_max": 270,
+                }
 
                 slices = process_image_with_slicing(frame)
                 for i, slice_img in enumerate(slices):
                     results = model.predict(slice_img, conf=CONFIDENCE_THRESHOLD, verbose=False)
-                    surfer_count += len(results[0].boxes)
-
-                    # Map each detected box back to full-frame coordinates and draw
                     x_offset, y_offset = slice_offsets[i]
+
                     for box in results[0].boxes:
                         x1, y1, x2, y2 = map(int, box.xyxy[0].cpu().numpy())
                         gx1 = x1 + x_offset
                         gy1 = y1 + y_offset
                         gx2 = x2 + x_offset
                         gy2 = y2 + y_offset
+
+                        # ── Beit Yanai pole filter ──────────────────────────
+                        # Skip detections whose center falls inside the known
+                        # pole zone. Only applied to Beit_Yanai.
+                        if name == "Beit_Yanai":
+                            center_x = (gx1 + gx2) // 2
+                            center_y = (gy1 + gy2) // 2
+                            pz = BEIT_YANAI_POLE_ZONE
+                            if (pz["x_min"] <= center_x <= pz["x_max"] and
+                                    pz["y_min"] <= center_y <= pz["y_max"]):
+                                continue  # false positive — skip count & rectangle
+                        # ────────────────────────────────────────────────────
+
+                        surfer_count += 1
                         cv2.rectangle(annotated_frame, (gx1, gy1), (gx2, gy2), (0, 255, 0), 2)
 
                 print(f"🏄 {surfer_count}")
@@ -382,6 +403,7 @@ while True:
                 save_to_db(name, "Day", surfer_count, cur_wind, cur_wave)
             else:
                 save_to_db(name, "Connection_Error", 0, cur_wind, cur_wave)
+
 
 
     except Exception as e:
