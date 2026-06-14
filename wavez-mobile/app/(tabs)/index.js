@@ -4,7 +4,7 @@ import Head from 'expo-router/head';
 import { router } from 'expo-router';
 import { ChevronDown, Home, LogOut, MapPin, TrendingUp, Users, Waves, Wind, X } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { I18nManager, Modal, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, useWindowDimensions, View, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { I18nManager, Image, Modal, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, useWindowDimensions, View, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker } from '../../components/AppMap';
 import { supabase } from '../../supabase';
@@ -306,50 +306,45 @@ export default function HomeScreen() {
           <View style={{ flex: 1, height: 500, backgroundColor: '#ffffff', borderRadius: 16 }} />
         )}
 
-        {/* ── Live Stream Block (Option A: embed beachcam.co.il page) ── */}
+        {/* ── Beach Snapshot Block (Plan B: scanner screenshot from Supabase Storage) ── */}
         {(() => {
-          const camUrl = BEACH_CAM_URLS[selectedBeach];
+          const STORAGE_BASE = "https://dkczgutwriwdeoxzllru.supabase.co/storage/v1/object/public/beach-snapshots";
+          // Append timestamp as cache-buster so image refreshes each scan cycle
+          const cacheBust = currentStatus?.timestamp
+            ? `?t=${encodeURIComponent(currentStatus.timestamp)}`
+            : `?t=${Date.now()}`;
+          const snapshotUrl = selectedBeach
+            ? `${STORAGE_BASE}/${encodeURIComponent(selectedBeach)}.jpg${cacheBust}`
+            : null;
+
           return (
             <View style={styles.streamCard}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, justifyContent: 'space-between' }}>
-                <Text style={styles.streamTitle}>📹 שידור חי</Text>
-                {camUrl && (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                    <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#ef4444' }} />
-                    <Text style={{ color: '#ef4444', fontSize: 11, fontWeight: 'bold', letterSpacing: 1 }}>LIVE</Text>
-                  </View>
+                <Text style={styles.streamTitle}>📷 תמונה אחרונה</Text>
+                {currentStatus && (
+                  <Text style={{ color: '#64748b', fontSize: 11 }}>
+                    עודכן {new Date(currentStatus.timestamp).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
                 )}
               </View>
-              {camUrl ? (
-                <View style={styles.streamWrapper}>
-                  {/* Clip window — landscape ratio matches camera (800×434), no empty space */}
-                  <View style={{ width: '100%', aspectRatio: 800 / 434, overflow: 'hidden', borderRadius: 10, backgroundColor: '#000' }}>
-                    <iframe
-                      key={camUrl}
-                      src={camUrl}
-                      style={{
-                        width: '100%',
-                        height: 900,
-                        border: 'none',
-                        display: 'block',
-                        marginTop: -320,
-                      }}
-                      allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-                      allowFullScreen
-                      frameBorder="0"
-                      scrolling="no"
-                    />
-                  </View>
-                </View>
+              {snapshotUrl ? (
+                <Image
+                  key={snapshotUrl}
+                  source={{ uri: snapshotUrl }}
+                  style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 10, backgroundColor: '#0f172a' }}
+                  resizeMode="cover"
+                />
               ) : (
                 <View style={styles.noStreamBox}>
                   <Text style={styles.noStreamIcon}>🎥</Text>
-                  <Text style={styles.noStreamText}>מצלמה לא זמינה</Text>
+                  <Text style={styles.noStreamText}>אין תמונה זמינה</Text>
                 </View>
               )}
             </View>
           );
         })()}
+
+
 
 
         {!loading && (

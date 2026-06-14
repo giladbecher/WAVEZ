@@ -107,9 +107,27 @@ def save_to_db(beach_name, status, count, wind, wave):
             "wave_height":  float(wave)
         }
         supabase.table("measurements").insert(data).execute()
-        print(f"    ☁️ Uploaded: {beach_name}")
+        print(f"    ☁️  DB: {beach_name}")
     except Exception as e:
         print(f"❌ Cloud Upload Error: {e}")
+
+def upload_snapshot_to_supabase(beach_name, frame):
+    """Upload clean beach snapshot (no bounding boxes) to Supabase Storage.
+    Bucket: beach-snapshots  |  Path: {beach_name}.jpg  (public, upsert)
+    """
+    if not supabase: return
+    try:
+        _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 82])
+        img_bytes = buffer.tobytes()
+        path = f"{beach_name}.jpg"
+        supabase.storage.from_("beach-snapshots").upload(
+            path,
+            img_bytes,
+            file_options={"content-type": "image/jpeg", "upsert": "true"}
+        )
+        print(f"    🖼️  Snapshot: {beach_name}", end="")
+    except Exception as e:
+        print(f"    ⚠️  Snapshot upload error ({beach_name}): {str(e)[:60]}")
 
 def smart_save_image(beach_name, frame, surfer_count):
     try:
@@ -124,6 +142,7 @@ def smart_save_image(beach_name, frame, surfer_count):
             last_image_save_time[beach_name] = now
     except Exception as e:
         print(f"Image Save Error: {e}")
+
 
 # --- Optimized Screenshot Function (reuses single browser instance per cycle) ---
 def capture_screenshot_with_driver(driver, page_url):
@@ -347,6 +366,9 @@ while True:
             surfer_count = 0
 
             if frame is not None:
+                # Upload CLEAN frame (no boxes) to Supabase Storage for web display
+                upload_snapshot_to_supabase(name, frame)
+
                 # Create annotated copy — clean frame stays intact for DB logic
                 annotated_frame = frame.copy()
                 height, width = frame.shape[:2]
