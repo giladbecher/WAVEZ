@@ -373,6 +373,12 @@ while True:
                 }
 
                 slices = process_image_with_slicing(frame)
+
+                # DEBUG — Beit Yanai: print frame size and all detected box coords
+                # so we can verify / recalibrate the pole blacklist zone.
+                if name == "Beit_Yanai":
+                    print(f"\n    🔬 DEBUG Beit_Yanai | frame size: {width}x{height}")
+
                 for i, slice_img in enumerate(slices):
                     results = model.predict(slice_img, conf=CONFIDENCE_THRESHOLD, verbose=False)
                     x_offset, y_offset = slice_offsets[i]
@@ -383,21 +389,27 @@ while True:
                         gy1 = y1 + y_offset
                         gx2 = x2 + x_offset
                         gy2 = y2 + y_offset
+                        center_x = (gx1 + gx2) // 2
+                        center_y = (gy1 + gy2) // 2
+
+                        # DEBUG — print every detection for Beit Yanai
+                        if name == "Beit_Yanai":
+                            print(f"    🔬 box: ({gx1},{gy1})->({gx2},{gy2}) | center: ({center_x},{center_y})")
 
                         # ── Beit Yanai pole filter ──────────────────────────
                         # Skip detections whose center falls inside the known
                         # pole zone. Only applied to Beit_Yanai.
                         if name == "Beit_Yanai":
-                            center_x = (gx1 + gx2) // 2
-                            center_y = (gy1 + gy2) // 2
                             pz = BEIT_YANAI_POLE_ZONE
                             if (pz["x_min"] <= center_x <= pz["x_max"] and
                                     pz["y_min"] <= center_y <= pz["y_max"]):
+                                print(f"    🚫 Pole filtered: center ({center_x},{center_y})")
                                 continue  # false positive — skip count & rectangle
                         # ────────────────────────────────────────────────────
 
                         surfer_count += 1
                         cv2.rectangle(annotated_frame, (gx1, gy1), (gx2, gy2), (0, 255, 0), 2)
+
 
                 print(f"🏄 {surfer_count}")
                 smart_save_image(name, annotated_frame, surfer_count)  # save with boxes
