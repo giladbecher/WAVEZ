@@ -299,6 +299,9 @@ export default function HomeScreen() {
         {/* ── Live Stream Block ── */}
         {(() => {
           const alias = BEACH_STREAM_ALIASES[selectedBeach];
+          const streamUrl = alias
+            ? `https://g1.ipcamlive.com/player/player.php?alias=${alias}&websocketenabled=1&autoplay=1&disablezoombutton=1&skin=white&hidelink=true&disablereportbutton=true&disableautofullscreen=1&disableframecapture=1`
+            : null;
           return (
             <View style={styles.streamCard}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, justifyContent: 'space-between' }}>
@@ -311,20 +314,29 @@ export default function HomeScreen() {
                 )}
               </View>
               {alias ? (
-                <View style={styles.streamWrapper}>
-                  <iframe
-                    src={`https://ipcamlive.com/player/player.php?alias=${alias}&autoplay=1&websocketenabled=1&skin=white&hidelink=true&disablereportbutton=true&disableautofullscreen=1`}
-                    style={{
-                      width: '100%',
-                      height: 220,
-                      border: 'none',
-                      borderRadius: 10,
-                      display: 'block',
-                    }}
-                    allow="autoplay"
-                    allowFullScreen
-                    frameBorder="0"
-                  />
+                <View>
+                  <View style={styles.streamWrapper}>
+                    <iframe
+                      src={streamUrl}
+                      style={{
+                        width: '100%',
+                        height: 220,
+                        border: 'none',
+                        borderRadius: 10,
+                        display: 'block',
+                      }}
+                      allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                      allowFullScreen
+                      frameBorder="0"
+                    />
+                  </View>
+                  {/* Tap-to-open fallback for iOS/Safari which blocks embedded autoplay */}
+                  <TouchableOpacity
+                    onPress={() => { if (typeof window !== 'undefined') window.open(streamUrl, '_blank'); }}
+                    style={styles.streamOpenBtn}
+                  >
+                    <Text style={styles.streamOpenBtnText}>▶ לא רואה את השידור? לחץ לפתיחה</Text>
+                  </TouchableOpacity>
                 </View>
               ) : (
                 <View style={styles.noStreamBox}>
@@ -335,6 +347,7 @@ export default function HomeScreen() {
             </View>
           );
         })()}
+
 
         {!loading && (
           <>
@@ -703,6 +716,8 @@ const styles = StyleSheet.create({
   noStreamBox:   { height: 160, borderRadius: 10, backgroundColor: '#0f172a', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#334155' },
   noStreamIcon:  { fontSize: 36, marginBottom: 8 },
   noStreamText:  { color: '#64748b', fontSize: 15, fontWeight: '600' },
+  streamOpenBtn: { marginTop: 10, alignItems: 'center', paddingVertical: 8 },
+  streamOpenBtnText: { color: '#38bdf8', fontSize: 13, textDecorationLine: 'underline' },
 
   leaderboardRow: {
     flexDirection: 'row',
