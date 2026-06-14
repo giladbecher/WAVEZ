@@ -32,9 +32,19 @@ const BEACH_TRANSLATIONS = {
 };
 
 // ipcamlive.com camera aliases — add more as they become available
-const BEACH_STREAM_ALIASES = {
-  "Ma'aravi_tel_aviv": "664cd75b7639c",
-  // remaining aliases will be added once confirmed
+// beachcam.co.il page URLs — these are whitelisted by ipcamlive so the stream plays
+const BEACH_CAM_URLS = {
+  "Ma'aravi_tel_aviv":  "https://beachcam.co.il/yafo.html",
+  "TLV_Dolphinarium":   "https://beachcam.co.il/dolfinarium.html",
+  "TLV_Hilton":         "https://beachcam.co.il/yamit.html",
+  "Herzliya_Dromi":     "https://beachcam.co.il/dromi2.html",
+  "Herzliya_Marina":    "https://beachcam.co.il/marina.html",
+  "Maagan_Michael":     "https://beachcam.co.il/maagan.html",
+  "Haifa_Nirvana":      "https://beachcam.co.il/testcam1.html",
+  "Haifa_Meridian":     "https://beachcam.co.il/meridian.html",
+  "Haifa_BatGalim":     "https://beachcam.co.il/backdoor.html",
+  "Krayot_MagicBoards": "https://beachcam.co.il/krayot.html",
+  // Beit_Yanai uses kookint/Surfline — different embed, add later
 };
 
 const BEACH_COORDINATES = {
@@ -296,47 +306,37 @@ export default function HomeScreen() {
           <View style={{ flex: 1, height: 500, backgroundColor: '#ffffff', borderRadius: 16 }} />
         )}
 
-        {/* ── Live Stream Block ── */}
+        {/* ── Live Stream Block (Option A: embed beachcam.co.il page) ── */}
         {(() => {
-          const alias = BEACH_STREAM_ALIASES[selectedBeach];
-          const streamUrl = alias
-            ? `https://g1.ipcamlive.com/player/player.php?alias=${alias}&websocketenabled=1&autoplay=1&disablezoombutton=1&skin=white&hidelink=true&disablereportbutton=true&disableautofullscreen=1&disableframecapture=1`
-            : null;
+          const camUrl = BEACH_CAM_URLS[selectedBeach];
           return (
             <View style={styles.streamCard}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, justifyContent: 'space-between' }}>
                 <Text style={styles.streamTitle}>📹 שידור חי</Text>
-                {alias && (
+                {camUrl && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                     <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#ef4444' }} />
                     <Text style={{ color: '#ef4444', fontSize: 11, fontWeight: 'bold', letterSpacing: 1 }}>LIVE</Text>
                   </View>
                 )}
               </View>
-              {alias ? (
-                <View>
-                  <View style={styles.streamWrapper}>
-                    <iframe
-                      src={streamUrl}
-                      style={{
-                        width: '100%',
-                        height: 220,
-                        border: 'none',
-                        borderRadius: 10,
-                        display: 'block',
-                      }}
-                      allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-                      allowFullScreen
-                      frameBorder="0"
-                    />
-                  </View>
-                  {/* Tap-to-open fallback for iOS/Safari which blocks embedded autoplay */}
-                  <TouchableOpacity
-                    onPress={() => { if (typeof window !== 'undefined') window.open(streamUrl, '_blank'); }}
-                    style={styles.streamOpenBtn}
-                  >
-                    <Text style={styles.streamOpenBtnText}>▶ לא רואה את השידור? לחץ לפתיחה</Text>
-                  </TouchableOpacity>
+              {camUrl ? (
+                <View style={styles.streamWrapper}>
+                  <iframe
+                    key={camUrl}
+                    src={camUrl}
+                    style={{
+                      width: '100%',
+                      height: 380,
+                      border: 'none',
+                      borderRadius: 10,
+                      display: 'block',
+                    }}
+                    allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                    allowFullScreen
+                    frameBorder="0"
+                    scrolling="no"
+                  />
                 </View>
               ) : (
                 <View style={styles.noStreamBox}>
