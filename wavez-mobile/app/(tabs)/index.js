@@ -31,6 +31,12 @@ const BEACH_TRANSLATIONS = {
   "TLV_Hilton": "תל אביב - הילטון",
 };
 
+// ipcamlive.com camera aliases — add more as they become available
+const BEACH_STREAM_ALIASES = {
+  "Ma'aravi_tel_aviv": "664cd75b7639c",
+  // remaining aliases will be added once confirmed
+};
+
 const BEACH_COORDINATES = {
   "Haifa_BatGalim": [32.833767, 34.973001],
   "Haifa_Nirvana": [32.800532, 34.956114],
@@ -290,25 +296,45 @@ export default function HomeScreen() {
           <View style={{ flex: 1, height: 500, backgroundColor: '#ffffff', borderRadius: 16 }} />
         )}
 
-        {data.length > 0 && (
-          <View style={styles.leaderboardCard}>
-            <Text style={styles.leaderboardTitle}>👥 החופים העמוסים ביותר</Text>
-            {availableBeaches.map(beach => {
-              const beachReadings = data.filter(r => r.beach_name === beach);
-              const lastReading = beachReadings[0];
-              return lastReading ? { ...lastReading, name: beach } : null;
-            }).filter(Boolean)
-              .sort((a, b) => b.surfer_count - a.surfer_count)
-              .slice(0, 5)
-              .map((beach, index) => (
-                <View key={beach.name} style={styles.leaderboardRow}>
-                  <Text style={styles.rank}>#{index + 1}</Text>
-                  <Text style={styles.rowName}>{BEACH_TRANSLATIONS[beach.name] || beach.name}</Text>
-                  <Text style={styles.rowValue}>{getSurferRange(beach.surfer_count)} גולשים</Text>
+        {/* ── Live Stream Block ── */}
+        {(() => {
+          const alias = BEACH_STREAM_ALIASES[selectedBeach];
+          return (
+            <View style={styles.streamCard}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, justifyContent: 'space-between' }}>
+                <Text style={styles.streamTitle}>📹 שידור חי</Text>
+                {alias && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                    <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#ef4444' }} />
+                    <Text style={{ color: '#ef4444', fontSize: 11, fontWeight: 'bold', letterSpacing: 1 }}>LIVE</Text>
+                  </View>
+                )}
+              </View>
+              {alias ? (
+                <View style={styles.streamWrapper}>
+                  <iframe
+                    src={`https://ipcamlive.com/player/player.php?alias=${alias}&autoplay=1&websocketenabled=1&skin=white&hidelink=true&disablereportbutton=true&disableautofullscreen=1`}
+                    style={{
+                      width: '100%',
+                      height: 220,
+                      border: 'none',
+                      borderRadius: 10,
+                      display: 'block',
+                    }}
+                    allow="autoplay"
+                    allowFullScreen
+                    frameBorder="0"
+                  />
                 </View>
-              ))}
-          </View>
-        )}
+              ) : (
+                <View style={styles.noStreamBox}>
+                  <Text style={styles.noStreamIcon}>🎥</Text>
+                  <Text style={styles.noStreamText}>מצלמה לא זמינה</Text>
+                </View>
+              )}
+            </View>
+          );
+        })()}
 
         {!loading && (
           <>
@@ -671,8 +697,13 @@ const styles = StyleSheet.create({
 
   pageTitle: { color: 'white', fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
 
-  leaderboardCard: { backgroundColor: '#1e293b', borderRadius: 16, padding: 16, marginBottom: 20 },
-  leaderboardTitle: { color: '#38bdf8', fontSize: 16, fontWeight: 'bold', marginBottom: 12, textAlign: 'right' },
+  streamCard:    { backgroundColor: '#1e293b', borderRadius: 16, padding: 16, marginBottom: 20 },
+  streamTitle:   { color: '#38bdf8', fontSize: 16, fontWeight: 'bold', textAlign: 'right' },
+  streamWrapper: { borderRadius: 10, overflow: 'hidden', backgroundColor: '#000' },
+  noStreamBox:   { height: 160, borderRadius: 10, backgroundColor: '#0f172a', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#334155' },
+  noStreamIcon:  { fontSize: 36, marginBottom: 8 },
+  noStreamText:  { color: '#64748b', fontSize: 15, fontWeight: '600' },
+
   leaderboardRow: {
     flexDirection: 'row',
     justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#334155'
