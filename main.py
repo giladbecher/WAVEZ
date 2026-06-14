@@ -113,19 +113,21 @@ def save_to_db(beach_name, status, count, wind, wave):
 
 def upload_snapshot_to_supabase(beach_name, frame):
     """Upload clean beach snapshot (no bounding boxes) to Supabase Storage.
-    Bucket: beach-snapshots  |  Path: {beach_name}.jpg  (public, upsert)
+    Bucket: beach-snapshots  |  Path: {safe_name}.jpg  (public, upsert)
     """
     if not supabase: return
     try:
         _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 82])
         img_bytes = buffer.tobytes()
-        path = f"{beach_name}.jpg"
+        # Sanitize filename: replace apostrophes/spaces so URL always matches
+        safe_name = beach_name.replace("'", "").replace(" ", "_")
+        path = f"{safe_name}.jpg"
         supabase.storage.from_("beach-snapshots").upload(
             path,
             img_bytes,
             file_options={"content-type": "image/jpeg", "upsert": "true"}
         )
-        print(f"    🖼️  Snapshot: {beach_name}", end="")
+        print(f"    🖼️  Snapshot: {safe_name}", end="")
     except Exception as e:
         print(f"    ⚠️  Snapshot upload error ({beach_name}): {str(e)[:60]}")
 

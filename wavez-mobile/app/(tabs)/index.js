@@ -309,12 +309,14 @@ export default function HomeScreen() {
         {/* ── Beach Snapshot Block (Plan B: scanner screenshot from Supabase Storage) ── */}
         {(() => {
           const STORAGE_BASE = "https://dkczgutwriwdeoxzllru.supabase.co/storage/v1/object/public/beach-snapshots";
+          // Sanitize name to match what the scanner uploads (apostrophes removed, spaces → _)
+          const safeName = selectedBeach ? selectedBeach.replace(/'/g, '').replace(/ /g, '_') : null;
           // Append timestamp as cache-buster so image refreshes each scan cycle
           const cacheBust = currentStatus?.timestamp
             ? `?t=${encodeURIComponent(currentStatus.timestamp)}`
             : `?t=${Date.now()}`;
-          const snapshotUrl = selectedBeach
-            ? `${STORAGE_BASE}/${encodeURIComponent(selectedBeach)}.jpg${cacheBust}`
+          const snapshotUrl = safeName
+            ? `${STORAGE_BASE}/${safeName}.jpg${cacheBust}`
             : null;
 
           return (
