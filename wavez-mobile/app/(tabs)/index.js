@@ -137,12 +137,59 @@ export default function HomeScreen() {
 
   const currentStatus = beachData.length > 0 ? beachData[beachData.length - 1] : null;
 
-  // --- 👇 פונקציה לחישוב טווח גולשים ---
+  // --- פונקציה לחישוב טווח גולשים ---
   const getSurferRange = (count) => {
     const safeCount = count || 0;
     const lower = Math.floor(safeCount / 5) * 5;
     const upper = lower + 5;
     return `${lower}-${upper}`;
+  };
+
+  // --- ציון התאמה לגלישה (0-100) ---
+  // משקל: גולשים 50% | גובה גל 35% | רוח 15%
+  const getSurfScore = (surferCount, waveHeight, windSpeed) => {
+    const surfers = surferCount || 0;
+    const wave    = waveHeight  || 0;
+    const wind    = windSpeed   || 0;
+
+    // ציון גולשים — פחות עמוס = עדיף
+    let surferScore;
+    if      (surfers <= 5)  surferScore = 100;
+    else if (surfers <= 15) surferScore = 75;
+    else if (surfers <= 25) surferScore = 45;
+    else                    surferScore = 15;
+
+    // ציון גלים — גלים בינוניים עדיפים
+    let waveScore;
+    if      (wave < 0.4)  waveScore = 20;   // ים שטוח
+    else if (wave < 0.8)  waveScore = 60;
+    else if (wave < 1.8)  waveScore = 100;  // אידיאלי
+    else if (wave < 2.5)  waveScore = 65;
+    else                  waveScore = 25;   // גלים גדולים מדי
+
+    // ציון רוח — פחות רוח = עדיף
+    let windScore;
+    if      (wind < 15) windScore = 100;
+    else if (wind < 25) windScore = 65;
+    else if (wind < 35) windScore = 35;
+    else                windScore = 10;
+
+    return Math.round((surferScore * 0.50) + (waveScore * 0.35) + (windScore * 0.15));
+  };
+
+  // --- צבע פין לפי ציון ---
+  const getPinColor = (score) => {
+    if (score === null || score === undefined) return '#94a3b8'; // אפור — אין נתונים
+    if (score >= 70) return '#22c55e';  // ירוק  — תנאים טובים
+    if (score >= 40) return '#f97316';  // כתום — בינוני
+    return '#ef4444';                   // אדום  — עמוס / לא מומלץ
+  };
+
+  const getScoreLabel = (score) => {
+    if (score === null || score === undefined) return 'אין נתונים';
+    if (score >= 70) return 'מעולה 🟢';
+    if (score >= 40) return 'בסדר 🟠';
+    return 'עמוס 🔴';
   };
   // ----------------------------------------
 
@@ -337,10 +384,16 @@ export default function HomeScreen() {
           onPress={() => setSelectedMapMarker(null)}
         >
           {Object.entries(BEACH_COORDINATES).map(([beachKey, coords]) => {
+            const status = beachStatuses[beachKey];
+            const score  = status
+              ? getSurfScore(status.surfer_count, status.wave_height, status.wind_speed)
+              : null;
+            const pinColor = getPinColor(score);
             return (
               <Marker
                 key={beachKey}
                 coordinate={{ latitude: coords[0], longitude: coords[1] }}
+                pinColor={pinColor}
                 onPress={() => {
                   setSelectedMapMarker(beachKey);
                 }}
@@ -382,11 +435,35 @@ export default function HomeScreen() {
               <Text style={{ textAlign: 'center', color: 'gray', paddingVertical: 10 }}>אין נתונים זמינים כרגע</Text>
             )}
 
-            {selectedStatus && (
-              <Text style={{ textAlign: 'center', fontSize: 11, color: '#94a3b8', marginTop: 12 }}>
-                עדכון אחרון: {new Date(selectedStatus.timestamp).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
-              </Text>
-            )}
+            {selectedStatus && (() => {
+              const score = getSurfScore(selectedStatus.surfer_count, selectedStatus.wave_height, selectedStatus.wind_speed);
+              const pinColor = getPinColor(score);
+              return (
+                <>
+                  <View style={{ alignItems: 'center', marginTop: 14, marginBottom: 4 }}>
+                    <View style={{
+                      backgroundColor: pinColor,
+                      borderRadius: 20,
+                      paddingHorizontal: 18,
+                      paddingVertical: 6,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}>
+                      <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 15 }}>
+                        ציון: {score}
+                      </Text>
+                      <Text style={{ color: 'white', fontSize: 13 }}>
+                        {getScoreLabel(score)}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={{ textAlign: 'center', fontSize: 11, color: '#94a3b8', marginTop: 8 }}>
+                    עדכון אחרון: {new Date(selectedStatus.timestamp).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                </>
+              );
+            })()}
           </View>
         )}
       </View>
