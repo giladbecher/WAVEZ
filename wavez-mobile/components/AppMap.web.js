@@ -52,22 +52,38 @@ const MapView = (props) => {
   );
 };
 
+// Build a colored SVG drop-pin icon from a hex color string
+const makeColoredIcon = (color) => {
+  const hex = color || '#3b82f6'; // default blue if no color given
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40">
+      <path d="M14 0C6.27 0 0 6.27 0 14c0 9.625 14 26 14 26S28 23.625 28 14C28 6.27 21.73 0 14 0z"
+            fill="${hex}" stroke="white" stroke-width="2"/>
+      <circle cx="14" cy="14" r="5.5" fill="white" opacity="0.9"/>
+    </svg>`;
+  return L.divIcon({
+    html: svg,
+    iconSize:   [28, 40],
+    iconAnchor: [14, 40],
+    popupAnchor:[0, -40],
+    className: '',   // removes Leaflet's default white box background
+  });
+};
+
 export const Marker = (props) => {
   const position = [props.coordinate.latitude, props.coordinate.longitude];
-  
+  const icon = makeColoredIcon(props.pinColor);
+
   return (
     <LeafletMarker
         position={position}
+        icon={icon}
         eventHandlers={{
             click: (e) => {
-                // --- התיקון הגדול ---
-                // 1. עוצרים את האירוע מלהגיע למפה (Leaflet way)
                 L.DomEvent.stopPropagation(e);
                 L.DomEvent.preventDefault(e);
-                
-                // 2. קוראים לפונקציה של ריאקט
                 if (props.onPress) {
-                    props.onPress(); // לא שולחים את ה-e כדי למנוע בלבול בקובץ הראשי
+                    props.onPress();
                 }
             },
         }}
