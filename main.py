@@ -240,7 +240,66 @@ def capture_screenshot_with_driver(driver, page_url):
                 print(f" ⚠️ BeitYanai-prep warning: {str(beit_err)[:60]} ", end="")
         # ── End Beit Yanai special handling ───────────────────────────────────
 
-        # Try to capture the specific video element first
+        # ── beachcam.co.il pages: force camera visible, crop to player ──────────
+        if 'beachcam.co.il' in page_url:
+            try:
+                # 1. Force the camera container visible and hide page chrome
+                driver.execute_script("""
+                    var c = document.querySelector('.cams-container, .main-container');
+                    var l = document.querySelector('.loader-container');
+                    if (c) { c.style.display = 'flex'; c.style.position = 'relative'; }
+                    if (l) l.style.display = 'none';
+                    // Hide header/nav/ads/footer so only camera shows
+                    ['header','nav','footer','.ad','.ad-horizon','.message',
+                     '#ad-side1-container','#ad-side2-container','.ads-container',
+                     '.cam-banner-link','.jump-btn','.mobile-btn'].forEach(function(sel){
+                        var el = document.querySelector(sel);
+                        if (el) el.style.display = 'none';
+                    });
+                """)
+                time.sleep(4)  # Let player render inside now-visible container
+
+                # 2. Try selectors from most-specific to least
+                cam_selectors = [
+                    '#cam',                         # yafo / yamit / others — direct iframe
+                    '.cams-container iframe',        # generic iframe inside container
+                    '#mediadiv iframe',              # krayot SDK embed
+                    '#mediadiv',                     # krayot SDK div (if no inner iframe yet)
+                    '.cams-container video',         # HTML5 video fallback
+                    '.cams-container',               # whole container as last resort
+                ]
+                cam_el = None
+                for sel in cam_selectors:
+                    try:
+                        el = driver.find_element(By.CSS_SELECTOR, sel)
+                        if el and el.is_displayed():
+                            cam_el = el
+                            break
+                    except:
+                        continue
+
+                if cam_el is None:
+                    # Try any visible iframe on the page
+                    for el in driver.find_elements(By.CSS_SELECTOR, 'iframe'):
+                        if el.is_displayed():
+                            cam_el = el
+                            break
+
+                if cam_el:
+                    png_data = cam_el.screenshot_as_png
+                    print(f" ✅ BeachCam-crop({cam_el.get_attribute('id') or cam_el.tag_name}) ", end="")
+                else:
+                    raise Exception("no visible camera element found")
+
+                nparr = np.frombuffer(png_data, np.uint8)
+                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                return img
+            except Exception as bc_err:
+                print(f" ⚠️ BeachCam handler: {str(bc_err)[:55]} — falling back ", end="")
+                # Fall through to generic handler below
+        # ── End beachcam.co.il handler ────────────────────────────────────────
+
+        # Try to capture the specific video element first (non-beachcam pages)
         try:
             possible_selectors = [
                 "iframe[src*='surfline']",
