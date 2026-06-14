@@ -165,42 +165,43 @@ def capture_screenshot_with_driver(driver, page_url):
                     print(" 📜 Scrolled ", end="")
                     time.sleep(2)  # Let scroll settle
 
-                    # 3. Switch INTO the iframe context so we can interact with
-                    #    elements inside it (parent-page clicks won't reach here)
+                    # 3. Switch INTO the iframe context to interact with the player
                     driver.switch_to.frame(surfline_iframe)
 
-                    # 4. Find and click the play button inside the iframe
-                    play_clicked = False
-                    iframe_play_selectors = [
-                        ".sl-play-button",         # Surfline custom class
-                        ".vjs-big-play-button",    # Video.js big play button
-                        "[class*='play-button']",  # Any class containing play-button
-                        "[class*='PlayButton']",
-                        "button[aria-label*='Play']",
-                        "button[title*='Play']",
-                        "button",                  # Last resort: first button found
-                    ]
-                    for sel in iframe_play_selectors:
-                        try:
-                            play_btn = WebDriverWait(driver, 3).until(
-                                EC.presence_of_element_located((By.CSS_SELECTOR, sel))
+                    # 4. Bypass the UI overlay entirely — call .play() directly on
+                    #    the <video> element via JavaScript. This is more reliable
+                    #    than clicking Surfline's custom overlay button, which
+                    #    changes class names between player versions.
+                    try:
+                        played = driver.execute_script("""
+                            var videos = document.querySelectorAll('video');
+                            if (videos.length > 0) {
+                                var v = videos[0];
+                                v.muted = true;      // required for autoplay in headless
+                                v.play();
+                                return true;
+                            }
+                            return false;
+                        """)
+                        if played:
+                            print(" ▶️ JS-play() ", end="")
+                        else:
+                            # Fallback: click the center of the iframe body
+                            driver.execute_script(
+                                "document.elementFromPoint("
+                                "document.documentElement.clientWidth/2,"
+                                "document.documentElement.clientHeight/2).click();"
                             )
-                            driver.execute_script("arguments[0].click();", play_btn)
-                            play_clicked = True
-                            print(f" ▶️ Clicked({sel}) ", end="")
-                            break
-                        except:
-                            continue
+                            print(" ▶️ Center-click ", end="")
+                    except Exception as play_err:
+                        print(f" ⚠️ play() failed: {str(play_err)[:40]} ", end="")
 
-                    if not play_clicked:
-                        print(" ⚠️ No play btn found ", end="")
-
-                    # 5. Switch BACK to parent page before screenshotting
+                    # 5. Switch BACK to the parent page before screenshotting
                     driver.switch_to.default_content()
 
                     # 6. Buffer time — live stream needs time to decode frames
                     print(" ⏳ Buffering ", end="")
-                    time.sleep(8)
+                    time.sleep(10)
 
                 else:
                     # No iframe found — fallback scroll to 60% of page height
