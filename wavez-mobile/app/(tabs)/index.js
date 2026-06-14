@@ -322,21 +322,24 @@ export default function HomeScreen() {
               </View>
               {camUrl ? (
                 <View style={styles.streamWrapper}>
-                  <iframe
-                    key={camUrl}
-                    src={camUrl}
-                    style={{
-                      width: '100%',
-                      height: 380,
-                      border: 'none',
-                      borderRadius: 10,
-                      display: 'block',
-                    }}
-                    allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-                    allowFullScreen
-                    frameBorder="0"
-                    scrolling="no"
-                  />
+                  {/* Clip window — shows only the camera area, hides header/nav/thumbnails */}
+                  <View style={{ height: 240, overflow: 'hidden', borderRadius: 10, backgroundColor: '#000' }}>
+                    <iframe
+                      key={camUrl}
+                      src={camUrl}
+                      style={{
+                        width: '100%',
+                        height: 650,
+                        border: 'none',
+                        display: 'block',
+                        marginTop: -320,  // skip: header ~80px + nav ~40px + btn ~40px + secondnav ~30px + thumbs ~100px + label ~30px
+                      }}
+                      allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                      allowFullScreen
+                      frameBorder="0"
+                      scrolling="no"
+                    />
+                  </View>
                 </View>
               ) : (
                 <View style={styles.noStreamBox}>
