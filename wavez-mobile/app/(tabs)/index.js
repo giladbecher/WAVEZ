@@ -38,12 +38,12 @@ const BEACH_CAM_URLS = {
   "TLV_Dolphinarium":   "https://beachcam.co.il/dolfinarium.html",
   "TLV_Hilton":         "https://beachcam.co.il/yamit.html",
   "Herzliya_Dromi":     "https://beachcam.co.il/dromi2.html",
-  "Herzliya_Marina":    "https://beachcam.co.il/marina.html",
   "Maagan_Michael":     "https://beachcam.co.il/maagan.html",
   "Haifa_Nirvana":      "https://beachcam.co.il/testcam1.html",
   "Haifa_Meridian":     "https://beachcam.co.il/meridian.html",
   "Haifa_BatGalim":     "https://beachcam.co.il/backdoor.html",
   "Krayot_MagicBoards": "https://beachcam.co.il/krayot.html",
+  // Herzliya_Marina removed — page redirects to MyBeachCam.app paywall
   // Beit_Yanai uses kookint/Surfline — different embed, add later
 };
 
@@ -322,8 +322,8 @@ export default function HomeScreen() {
               </View>
               {camUrl ? (
                 <View style={styles.streamWrapper}>
-                  {/* Clip window — square on mobile, hides header/nav/thumbnails */}
-                  <View style={{ width: '100%', aspectRatio: 1, overflow: 'hidden', borderRadius: 10, backgroundColor: '#000' }}>
+                  {/* Clip window — landscape ratio matches camera (800×434), no empty space */}
+                  <View style={{ width: '100%', aspectRatio: 800 / 434, overflow: 'hidden', borderRadius: 10, backgroundColor: '#000' }}>
                     <iframe
                       key={camUrl}
                       src={camUrl}
