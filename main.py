@@ -26,7 +26,7 @@ from selenium.common.exceptions import TimeoutException
 # ==========================================
 #            SUPABASE SETTINGS 
 # ==========================================
-SUPABASE_URL = "https://dkczgutwriwdeoxzllru.supabase.co"
+SUPABASE_URL = "https://dkczgutwriwdeoxzllru.supabase.co/"  # trailing slash required by supabase-py v2
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrY3pndXR3cml3ZGVveHpsbHJ1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDYzOTM0NiwiZXhwIjoyMDgwMjE1MzQ2fQ.5xc96hGjg--umg2e75BCg3ZM9x47t-whVQWNogibf0E"
 
 try:
@@ -495,6 +495,17 @@ while True:
                                     pz["y_min"] <= center_y <= pz["y_max"]):
                                 print(f"    🚫 Pole filtered: center ({center_x},{center_y})")
                                 continue  # false positive — skip count & rectangle
+                        # ─────────────────────────────────────────────────────
+
+                        # ── Beit Yanai tiny-box filter ───────────────────────
+                        # The debug logs show many 5×7, 7×6, 9×5 px detections
+                        # scattered across the whole frame — clearly not surfers.
+                        # The pole-zone filter only covers y:235–270; this second
+                        # pass catches the rest anywhere on the frame.
+                        # Real surfers produce boxes well above 20 px in both dims.
+                        if name == "Beit_Yanai":
+                            if box_w < 20 and box_h < 20:
+                                continue  # tiny false-positive — skip count & rectangle
                         # ─────────────────────────────────────────────────────
 
                         # ── Herzliya Marina buoy filter (Layer 2) ───────────
