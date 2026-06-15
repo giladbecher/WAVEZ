@@ -462,8 +462,13 @@ while True:
                 if name == "Beit_Yanai":
                     print(f"\n    🔬 DEBUG Beit_Yanai | frame size: {width}x{height}")
 
+                # Layer 1 — dynamic confidence threshold.
+                # Herzliya_Marina has floating buoys that trigger at low confidence;
+                # use a stricter threshold to suppress them before YOLO even scores.
+                current_conf = 0.45 if name == "Herzliya_Marina" else CONFIDENCE_THRESHOLD
+
                 for i, slice_img in enumerate(slices):
-                    results = model.predict(slice_img, conf=CONFIDENCE_THRESHOLD, verbose=False)
+                    results = model.predict(slice_img, conf=current_conf, verbose=False)
                     x_offset, y_offset = slice_offsets[i]
 
                     for box in results[0].boxes:
@@ -474,12 +479,14 @@ while True:
                         gy2 = y2 + y_offset
                         center_x = (gx1 + gx2) // 2
                         center_y = (gy1 + gy2) // 2
+                        box_w    = gx2 - gx1
+                        box_h    = gy2 - gy1
 
                         # DEBUG — print every detection for Beit Yanai
                         if name == "Beit_Yanai":
                             print(f"    🔬 box: ({gx1},{gy1})->({gx2},{gy2}) | center: ({center_x},{center_y})")
 
-                        # ── Beit Yanai pole filter ──────────────────────────
+                        # ── Beit Yanai pole filter ───────────────────────────
                         # Skip detections whose center falls inside the known
                         # pole zone. Only applied to Beit_Yanai.
                         if name == "Beit_Yanai":
@@ -488,7 +495,19 @@ while True:
                                     pz["y_min"] <= center_y <= pz["y_max"]):
                                 print(f"    🚫 Pole filtered: center ({center_x},{center_y})")
                                 continue  # false positive — skip count & rectangle
-                        # ────────────────────────────────────────────────────
+                        # ─────────────────────────────────────────────────────
+
+                        # ── Herzliya Marina buoy filter (Layer 2) ───────────
+                        # Floating buoys / markers in the Marina appear in the
+                        # horizontal water band y=400..650 and produce very tiny
+                        # bounding boxes (both width & height < 20 px).
+                        # Real surfers in the same band are always much larger,
+                        # so they pass this check untouched.
+                        if name == "Herzliya_Marina":
+                            if (400 <= center_y <= 650 and
+                                    box_w < 20 and box_h < 20):
+                                continue  # buoy false-positive — skip count & rectangle
+                        # ─────────────────────────────────────────────────────
 
                         surfer_count += 1
                         cv2.rectangle(annotated_frame, (gx1, gy1), (gx2, gy2), (0, 255, 0), 2)
