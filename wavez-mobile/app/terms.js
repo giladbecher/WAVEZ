@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, I18nManager, ScrollView } from 'react-native';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useLanguage } from '../contexts/LanguageContext';
 
 // Make sure RTL is enforced if needed globally
@@ -14,13 +14,14 @@ export default function TermsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>{t('termsBack')}</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>{t('termsTitle')}</Text>
-        <View style={{ width: 50 }} />
-      </View>
+      <Stack.Screen 
+        options={{ 
+          title: t('termsTitle'),
+          headerStyle: { backgroundColor: '#0f172a' },
+          headerTintColor: 'white',
+          headerTitleStyle: { fontWeight: 'bold' },
+        }} 
+      />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
 
         {/* English notice banner — shown only when English is active */}
