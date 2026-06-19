@@ -337,7 +337,7 @@ const CrowdForecast = () => {
               <Text style={styles.seaConditionsLabel}>{t('windKmh')}</Text>
             </View>
             <View style={styles.seaConditionsItem}>
-              <Text style={styles.seaConditionsValueText}>{seaConditions.windLabel}</Text>
+              <Text style={styles.seaConditionsValue}>{seaConditions.windLabel}</Text>
               <Text style={styles.seaConditionsLabel}>{t('cfWindDirection')}</Text>
             </View>
           </View>
@@ -448,6 +448,7 @@ const styles = StyleSheet.create({
   seaConditionsRow: {
     justifyContent: 'space-between',
     alignItems: 'center',
+    width: '100%',
   },
   seaConditionsItem: {
     flex: 1,
@@ -458,17 +459,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 4,
-  },
-  seaConditionsValueText: {
-    color: '#38bdf8',
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginBottom: 4,
     textAlign: 'center',
   },
   seaConditionsLabel: {
     color: '#64748b',
     fontSize: 12,
+    textAlign: 'center',
   },
 });
 
