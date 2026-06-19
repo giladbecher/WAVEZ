@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, I18nManager, ScrollView } from 'react-native';
 import { router } from 'expo-router';
-import { useLanguage } from '../../contexts/LanguageContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Make sure RTL is enforced if needed globally
 try {
