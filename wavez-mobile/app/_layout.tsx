@@ -4,8 +4,9 @@ import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { I18nManager, Platform } from 'react-native';
-import { useEffect, useState } from 'react'; // הוספנו את useState
+import { useEffect, useState } from 'react';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { LanguageProvider } from '../contexts/LanguageContext';
 export const unstable_settings = {
   anchor: '(tabs)',
 };
@@ -41,10 +42,8 @@ export default function RootLayout() {
             padding: 0;
             overflow: hidden;
           }
-          body, .css-view-175oi2r { 
-            direction: rtl !important; 
-            text-align: right !important; 
-          }
+          /* Direction is now controlled via document.documentElement.dir */
+          /* so we do NOT set direction here — allows dynamic RTL/LTR switching */
           #root { 
             background-color: #0f172a; 
             height: 100dvh !important; 
@@ -61,6 +60,10 @@ export default function RootLayout() {
           svg { transform: scaleX(1); }
         `;
         document.head.appendChild(style);
+
+        // Set initial document direction for Hebrew (RTL default)
+        document.documentElement.dir  = 'rtl';
+        document.documentElement.lang = 'he';
 
         setTimeout(() => {
             const rootElement = document.getElementById('root');
@@ -90,18 +93,31 @@ export default function RootLayout() {
     }
   }, []);
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Head>
-        <title>WAVEZ PRO</title>
-        <meta name="description" content="WAVEZ PRO - Surf Forecast" />
-        <link rel="icon" type="image/png" href="/favicon.png" />
-      </Head>
+    <>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Head>
+          <title>WAVEZ PRO</title>
+          <meta name="description" content="WAVEZ PRO - Surf Forecast" />
+          <link rel="icon" type="image/png" href="/favicon.png" />
+          <script async src="https://www.googletagmanager.com/gtag/js?id=G-J5W1BJ0SBN" />
+          <script>
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-J5W1BJ0SBN');
+            `}
+          </script>
+        </Head>
 
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+        <LanguageProvider>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+          </Stack>
+        </LanguageProvider>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </>
   );
 }

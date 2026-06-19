@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, I18nManager, ScrollView } from 'react-native';
 import { router } from 'expo-router';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // Make sure RTL is enforced if needed globally
 try {
@@ -9,17 +10,26 @@ try {
 } catch (e) { }
 
 export default function TermsScreen() {
+  const { t, isRTL } = useLanguage();
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>חזור</Text>
+          <Text style={styles.backText}>{t('termsBack')}</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>תנאי שימוש ונגישות</Text>
+        <Text style={styles.title}>{t('termsTitle')}</Text>
         <View style={{ width: 50 }} />
       </View>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        
+
+        {/* English notice banner — shown only when English is active */}
+        {t('termsEnglishNote') && (
+          <View style={styles.englishNotice}>
+            <Text style={styles.englishNoticeText}>ℹ️  {t('termsEnglishNote')}</Text>
+          </View>
+        )}
+
         {/* נגישות */}
         <Text style={styles.h1}>הצהרת נגישות</Text>
         <Text style={styles.date}>עדכון אחרון: 11.04.2026</Text>
@@ -188,5 +198,19 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#1e293b',
     marginVertical: 30,
+  },
+  englishNotice: {
+    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 24,
+  },
+  englishNoticeText: {
+    color: '#38bdf8',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
