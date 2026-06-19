@@ -28,10 +28,26 @@ export default function RootLayout() {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
         const bodyStyle = document.body.style;
         bodyStyle.backgroundColor = '#ffffff';
-        bodyStyle.backgroundImage = "url('/splash-logo.png')";
-        bodyStyle.backgroundRepeat = 'no-repeat';
-        bodyStyle.backgroundPosition = 'center center';
-        bodyStyle.backgroundSize = '180px auto'; 
+
+        // יצירת אלמנט וידאו למסך הטעינה
+        const video = document.createElement('video');
+        video.id = 'loading-video';
+        video.src = '/loading-video.mp4';
+        video.autoplay = true;
+        video.muted = true;
+        video.loop = true;
+        video.setAttribute('playsinline', 'true');
+        video.setAttribute('webkit-playsinline', 'true');
+        video.style.position = 'fixed';
+        video.style.top = '50%';
+        video.style.left = '50%';
+        video.style.transform = 'translate(-50%, -50%)';
+        video.style.maxWidth = '100%';
+        video.style.maxHeight = '100%';
+        video.style.width = 'auto';
+        video.style.height = 'auto';
+        video.style.zIndex = '0';
+        document.body.appendChild(video);
         
         const style = document.createElement('style');
         style.innerHTML = `
@@ -41,6 +57,7 @@ export default function RootLayout() {
             margin: 0; 
             padding: 0;
             overflow: hidden;
+            background-color: #ffffff;
           }
           /* Direction is now controlled via document.documentElement.dir */
           /* so we do NOT set direction here — allows dynamic RTL/LTR switching */
@@ -51,7 +68,9 @@ export default function RootLayout() {
             display: flex;
             flex-direction: column;
             opacity: 0;
-            transition: opacity 0.8s ease-in-out; 
+            transition: opacity 0.8s ease-in-out;
+            position: relative;
+            z-index: 1;
           }
           #root.loaded {
             opacity: 1;
@@ -73,6 +92,14 @@ export default function RootLayout() {
                 metaTheme.name = 'theme-color';
                 metaTheme.content = '#0f172a';
                 document.head.appendChild(metaTheme);
+            }
+            
+            // הסרת הוידאו מה-DOM לאחר סיום המעבר (0.8 שניות) כדי לחסוך במשאבים
+            const loadingVideo = document.getElementById('loading-video');
+            if (loadingVideo) {
+                setTimeout(() => {
+                    loadingVideo.remove();
+                }, 800);
             }
         }, 1500); 
 
