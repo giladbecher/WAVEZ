@@ -99,6 +99,13 @@ const STRINGS = {
     termsBack:          "חזור",
     termsTitle:         "תנאי שימוש ונגישות",
     termsEnglishNote:   null,
+    // Wave sizes
+    waveAnkle:          "קרסול",
+    waveKnee:           "ברך",
+    waveWaist:          "מותן",
+    waveChest:          "חזה",
+    waveHead:           "ראש",
+    waveOverhead:       "מעל הראש",
   },
   en: {
     // Home screen
@@ -163,6 +170,13 @@ const STRINGS = {
     termsBack:          "Back",
     termsTitle:         "Terms of Use & Accessibility",
     termsEnglishNote:   "This page is currently available in Hebrew only.",
+    // Wave sizes
+    waveAnkle:          "Ankle",
+    waveKnee:           "Knee",
+    waveWaist:          "Waist",
+    waveChest:          "Chest",
+    waveHead:           "Head",
+    waveOverhead:       "Overhead",
   },
 };
 
@@ -211,8 +225,21 @@ export const LanguageProvider = ({ children }) => {
   /** Returns the translated beach display name. */
   const tBeach = (beachKey) => BEACH_NAMES[language]?.[beachKey] ?? beachKey;
 
+  /** Returns the human-readable wave size descriptor. */
+  const getWaveSizeLabel = (waveHeight) => {
+    if (waveHeight == null) return "";
+    const h = parseFloat(waveHeight);
+    if (isNaN(h)) return "";
+    if (h <= 0.3) return t('waveAnkle');
+    if (h <= 0.5) return t('waveKnee');
+    if (h <= 0.8) return t('waveWaist');
+    if (h <= 1.0) return t('waveChest');
+    if (h <= 1.5) return t('waveHead');
+    return t('waveOverhead');
+  };
+
   return (
-    <LanguageContext.Provider value={{ language, isRTL, dir, locale, toggleLanguage, t, tBeach }}>
+    <LanguageContext.Provider value={{ language, isRTL, dir, locale, toggleLanguage, t, tBeach, getWaveSizeLabel }}>
       {children}
     </LanguageContext.Provider>
   );

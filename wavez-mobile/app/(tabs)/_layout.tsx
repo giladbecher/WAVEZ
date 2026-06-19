@@ -10,6 +10,7 @@ function TabLayout() {
       <View style={styles.mainContent}>
         <Stack>
           <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="terms" options={{ headerShown: false }} />
         </Stack>
       </View>
     </SafeAreaView>

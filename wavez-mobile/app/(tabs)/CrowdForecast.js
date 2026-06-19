@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator
 import { supabase } from '../../supabase';
 import { LineChart } from "react-native-chart-kit";
 import { useLanguage } from '../../contexts/LanguageContext';
+import { sanitizeData } from '../../utils/dataSanitation';
 
 // Screen width for chart sizing
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -23,7 +24,7 @@ const AVAILABLE_BEACHES = [
 ];
 
 const CrowdForecast = () => {
-  const { t, tBeach, dir, locale } = useLanguage();
+  const { t, tBeach, dir, locale, getWaveSizeLabel } = useLanguage();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedBeach, setSelectedBeach] = useState('TLV_Dolphinarium');
@@ -59,8 +60,9 @@ const CrowdForecast = () => {
         .limit(5000);
       if (error) throw error;
 
+      const sanitizedMeasurements = sanitizeData(measurements);
       const hourlyData = {};
-      measurements.forEach(measurement => {
+      sanitizedMeasurements.forEach(measurement => {
         const measurementDate = new Date(measurement.timestamp);
         if (measurementDate.getDay() === dayOfWeek) {
           const hour = measurementDate.getHours();
@@ -330,6 +332,9 @@ const CrowdForecast = () => {
           <View style={[styles.seaConditionsRow, { flexDirection: dir === 'rtl' ? 'row-reverse' : 'row' }]}>
             <View style={styles.seaConditionsItem}>
               <Text style={styles.seaConditionsValue}>{seaConditions.waveHeight}m</Text>
+              <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: -2, marginBottom: 2 }}>
+                ({getWaveSizeLabel(seaConditions.waveHeight)})
+              </Text>
               <Text style={styles.seaConditionsLabel}>{t('waveHeight')}</Text>
             </View>
             <View style={styles.seaConditionsItem}>

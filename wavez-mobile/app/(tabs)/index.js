@@ -10,6 +10,7 @@ import MapView, { Marker } from '../../components/AppMap';
 import { supabase } from '../../supabase';
 import CrowdForecast from './CrowdForecast';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { sanitizeData } from '../../utils/dataSanitation';
 
 // beachcam.co.il page URLs — whitelisted by ipcamlive so the stream plays
 const BEACH_CAM_URLS = {
@@ -45,7 +46,7 @@ const AVAILABLE_BEACH_KEYS = Object.keys(BEACH_COORDINATES);
 
 export default function HomeScreen() {
   // ─── Language ───────────────────────────────────────────────────
-  const { t, tBeach, isRTL, dir, locale, language, toggleLanguage } = useLanguage();
+  const { t, tBeach, isRTL, dir, locale, language, toggleLanguage, getWaveSizeLabel } = useLanguage();
 
   // ─── State ──────────────────────────────────────────────────────
   const [data, setData] = useState([]);
@@ -97,7 +98,8 @@ export default function HomeScreen() {
         .order('id', { ascending: false })
         .limit(3000);
       if (error) throw error;
-      const cleanData = measurements.filter(row => row.beach_name);
+      const sanitizedMeasurements = sanitizeData(measurements);
+      const cleanData = sanitizedMeasurements.filter(row => row.beach_name);
       setData(cleanData);
       if (!selectedBeach && cleanData.length > 0) {
         setSelectedBeach(cleanData[0].beach_name);
@@ -249,6 +251,9 @@ export default function HomeScreen() {
               <View style={[styles.statCard, isDesktop && { flex: 1, marginHorizontal: 5 }]}>
                 <Waves color="#38bdf8" size={32} />
                 <Text style={styles.statValue}>{currentStatus.wave_height}m</Text>
+                <Text style={{ fontSize: 12, color: '#94a3b8', marginTop: 2, marginBottom: 2 }}>
+                  ({getWaveSizeLabel(currentStatus.wave_height)})
+                </Text>
                 <Text style={styles.statLabel}>{t('waveHeight')}</Text>
               </View>
               <View style={[styles.statCard, isDesktop && { flex: 1, marginHorizontal: 5 }]}>
@@ -399,6 +404,9 @@ export default function HomeScreen() {
                 <View style={{ alignItems: 'center', flex: 1, borderRightWidth: 1, borderLeftWidth: 1, borderColor: '#e2e8f0' }}>
                   <Waves color="#38bdf8" size={24} />
                   <Text style={{ fontWeight: 'bold', marginTop: 4, fontSize: 16 }}>{selectedStatus.wave_height}m</Text>
+                  <Text style={{ fontSize: 11, color: '#64748b', marginTop: 1, marginBottom: 1 }}>
+                    ({getWaveSizeLabel(selectedStatus.wave_height)})
+                  </Text>
                   <Text style={{ fontSize: 12, color: '#64748b' }}>{t('mapWave')}</Text>
                 </View>
                 <View style={{ alignItems: 'center', flex: 1 }}>
