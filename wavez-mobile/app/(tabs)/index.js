@@ -20,7 +20,7 @@ const BEACH_CAM_URLS = {
   "Maagan_Michael":     "https://beachcam.co.il/maagan.html",
   "Haifa_Nirvana":      "https://beachcam.co.il/testcam1.html",
   "Haifa_Meridian":     "https://beachcam.co.il/meridian.html",
-  "Haifa_BatGalim":     "https://beachcam.co.il/backdoor.html",
+  "Haifa_BatGalim":     "https://beachcam.co.il/batgalim.html",
   "Krayot_MagicBoards": "https://beachcam.co.il/krayot.html",
   // Herzliya_Marina removed — page redirects to MyBeachCam.app paywall
   // Beit_Yanai uses kookint/Surfline — different embed, add later

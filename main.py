@@ -78,7 +78,7 @@ beaches_config = {
     # North
     "Haifa_Nirvana":     {"page_url": "https://beachcam.co.il/testcam1.html",    "type": "browser_screenshot"},
     "Haifa_Meridian":    {"page_url": "https://beachcam.co.il/meridian.html",    "type": "browser_screenshot"},
-    "Haifa_BatGalim":    {"page_url": "https://beachcam.co.il/backdoor.html",    "type": "browser_screenshot"},
+    "Haifa_BatGalim":    {"page_url": "https://beachcam.co.il/batgalim.html",    "type": "browser_screenshot"},
     "Krayot_MagicBoards":{"page_url": "https://beachcam.co.il/krayot.html",      "type": "browser_screenshot"},
 } 
 
