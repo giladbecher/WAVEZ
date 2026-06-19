@@ -29,6 +29,8 @@ const CrowdForecast = () => {
   const [selectedBeach, setSelectedBeach] = useState('TLV_Dolphinarium');
   const [historicalData, setHistoricalData] = useState({});
   const [waveForecast, setWaveForecast] = useState({});
+  const [windForecast, setWindForecast] = useState({});
+  const [holidays, setHolidays] = useState(new Set());
   const [loading, setLoading] = useState(false);
   const [showDateSelector, setShowDateSelector] = useState(false);
   const [showBeachSelector, setShowBeachSelector] = useState(false);
@@ -84,46 +86,117 @@ const CrowdForecast = () => {
   const fetchWaveForecast = async (targetDate) => {
     try {
       const dateStr = targetDate.toISOString().split('T')[0];
-      const url = `https://marine-api.open-meteo.com/v1/marine?latitude=32.0853&longitude=34.7818&hourly=wave_height&start_date=${dateStr}&end_date=${dateStr}&timezone=auto`;
-      const response = await fetch(url);
-      const data = await response.json();
+      const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=32.0853&longitude=34.7818&hourly=wave_height&start_date=${dateStr}&end_date=${dateStr}&timezone=auto`;
+      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=32.0853&longitude=34.7818&hourly=wind_direction_10m&start_date=${dateStr}&end_date=${dateStr}&timezone=auto`;
+
+      const [marineRes, weatherRes] = await Promise.all([
+        fetch(marineUrl),
+        fetch(weatherUrl)
+      ]);
+
+      const marineData = await marineRes.json();
+      const weatherData = await weatherRes.json();
+
       const hourlyWaves = {};
-      if (data.hourly && data.hourly.time && data.hourly.wave_height) {
-        data.hourly.time.forEach((timeStr, index) => {
+      const hourlyWind = {};
+
+      if (marineData.hourly && marineData.hourly.time && marineData.hourly.wave_height) {
+        marineData.hourly.time.forEach((timeStr, index) => {
           const hour = new Date(timeStr).getHours();
           if (hour >= 6 && hour <= 19) {
-            hourlyWaves[hour] = data.hourly.wave_height[index];
+            hourlyWaves[hour] = marineData.hourly.wave_height[index];
           }
         });
       }
+
+      if (weatherData.hourly && weatherData.hourly.time && weatherData.hourly.wind_direction_10m) {
+        weatherData.hourly.time.forEach((timeStr, index) => {
+          const hour = new Date(timeStr).getHours();
+          if (hour >= 6 && hour <= 19) {
+            hourlyWind[hour] = weatherData.hourly.wind_direction_10m[index];
+          }
+        });
+      }
+
       setWaveForecast(hourlyWaves);
+      setWindForecast(hourlyWind);
     } catch (error) {
-      console.error("Error fetching wave forecast:", error);
+      console.error("Error fetching forecasts:", error);
     }
   };
 
   const predictions = useMemo(() => {
     const result = [];
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const localDateStr = `${year}-${month}-${day}`;
+    
+    const isHoliday = holidays.has(localDateStr);
+    const dayOfWeek = selectedDate.getDay();
+    const isWeekend = (dayOfWeek === 5 || dayOfWeek === 6);
+    
+    // Day factor: Holiday takes precedence over standard weekend
+    const dayFactor = isHoliday ? 1.4 : (isWeekend ? 1.3 : 1.0);
+
     for (let hour = 6; hour <= 19; hour++) {
       const historicalAvg = historicalData[hour] || 0;
       const waveHeight    = waveForecast[hour]   || 0;
-      let waveFactor = 1.0;
-      if (waveHeight > 1.2)      waveFactor = 1.5;
-      else if (waveHeight < 0.4) waveFactor = 0.5;
+      const windDir       = windForecast[hour];
 
-      let predictedCrowd = Math.round(historicalAvg * waveFactor);
+      // 1. Continuous Gaussian Wave Factor (peaks at 1.25m with amplitude 1.1, baseline 0.4)
+      const peak = 1.25;
+      const stdDev = 0.55;
+      const amplitude = 1.1;
+      const baseline = 0.4;
+      const waveFactor = baseline + amplitude * Math.exp(-Math.pow(waveHeight - peak, 2) / (2 * Math.pow(stdDev, 2)));
+
+      // 2. Wind Direction Factor (Offshore / Onshore)
+      let windFactor = 1.0;
+      if (windDir !== undefined && windDir !== null) {
+        // Eastern wind (Offshore): 45 to 135 degrees
+        if (windDir >= 45 && windDir <= 135) {
+          windFactor = 1.2;
+        }
+        // Western wind (Onshore): 225 to 315 degrees
+        else if (windDir >= 225 && windDir <= 315) {
+          windFactor = 0.8;
+        }
+      }
+
+      // 3. Combine all multipliers
+      let predictedCrowd = Math.round(historicalAvg * waveFactor * windFactor * dayFactor);
+
+      // 4. Fallback logic: show crowd for good wave heights even if no historical average is recorded
       if (predictedCrowd === 0 && waveHeight >= 1.0) {
         predictedCrowd = Math.max(3, Math.round(waveHeight * 2));
       }
+
       result.push({ hour, predictedCrowd });
     }
     return result;
-  }, [historicalData, waveForecast]);
+  }, [historicalData, waveForecast, windForecast, holidays, selectedDate]);
 
   useEffect(() => {
     fetchHistoricalData(selectedDate, selectedBeach);
     fetchWaveForecast(selectedDate);
   }, [selectedDate, selectedBeach]);
+
+  useEffect(() => {
+    const fetchHolidays = async () => {
+      try {
+        const response = await fetch("https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&i=on&year=now");
+        const data = await response.json();
+        if (data.items) {
+          const holidayDates = new Set(data.items.map(item => item.date));
+          setHolidays(holidayDates);
+        }
+      } catch (error) {
+        console.error("Error fetching holidays:", error);
+      }
+    };
+    fetchHolidays();
+  }, []);
 
   // Locale-aware date formatter — switches between Hebrew and English
   const formatDate = (date) => {
