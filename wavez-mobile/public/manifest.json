@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "WAVEZ PRO",
   "short_name": "WAVEZ PRO",
   "start_url": "/",
@@ -7,7 +7,7 @@
   "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
