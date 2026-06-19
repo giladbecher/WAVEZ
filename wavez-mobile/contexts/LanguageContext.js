@@ -90,6 +90,11 @@ const STRINGS = {
     cfChartTitle:       "מגמת עומס יומית",
     cfNoData:           "אין נתונים ליום זה",
     cfChartNote:        "* המספרים על הגרף מייצגים כמות גולשים משוערת",
+    cfSeaConditions:    "מצב הים באותו יום:",
+    cfWindOffshore:     "מזרחית (Offshore) 🌊",
+    cfWindOnshore:      "מערבית (Onshore) 🌬️",
+    cfWindSideshore:    "צדדית",
+    cfWindDirection:    "כיוון רוח",
     // Terms page
     termsBack:          "חזור",
     termsTitle:         "תנאי שימוש ונגישות",
@@ -149,6 +154,11 @@ const STRINGS = {
     cfChartTitle:       "Daily Crowd Forecast",
     cfNoData:           "No data for this day",
     cfChartNote:        "* Numbers on the chart represent estimated surfer count",
+    cfSeaConditions:    "Sea conditions on this day:",
+    cfWindOffshore:     "Eastern (Offshore) 🌊",
+    cfWindOnshore:      "Western (Onshore) 🌬️",
+    cfWindSideshore:    "Sideshore",
+    cfWindDirection:    "Wind Direction",
     // Terms page
     termsBack:          "Back",
     termsTitle:         "Terms of Use & Accessibility",

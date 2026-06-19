@@ -30,6 +30,7 @@ const CrowdForecast = () => {
   const [historicalData, setHistoricalData] = useState({});
   const [waveForecast, setWaveForecast] = useState({});
   const [windForecast, setWindForecast] = useState({});
+  const [windSpeedForecast, setWindSpeedForecast] = useState({});
   const [holidays, setHolidays] = useState(new Set());
   const [loading, setLoading] = useState(false);
   const [showDateSelector, setShowDateSelector] = useState(false);
@@ -87,7 +88,7 @@ const CrowdForecast = () => {
     try {
       const dateStr = targetDate.toISOString().split('T')[0];
       const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=32.0853&longitude=34.7818&hourly=wave_height&start_date=${dateStr}&end_date=${dateStr}&timezone=auto`;
-      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=32.0853&longitude=34.7818&hourly=wind_direction_10m&start_date=${dateStr}&end_date=${dateStr}&timezone=auto`;
+      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=32.0853&longitude=34.7818&hourly=wind_direction_10m,wind_speed_10m&start_date=${dateStr}&end_date=${dateStr}&timezone=auto`;
 
       const [marineRes, weatherRes] = await Promise.all([
         fetch(marineUrl),
@@ -99,6 +100,7 @@ const CrowdForecast = () => {
 
       const hourlyWaves = {};
       const hourlyWind = {};
+      const hourlyWindSpeed = {};
 
       if (marineData.hourly && marineData.hourly.time && marineData.hourly.wave_height) {
         marineData.hourly.time.forEach((timeStr, index) => {
@@ -109,17 +111,19 @@ const CrowdForecast = () => {
         });
       }
 
-      if (weatherData.hourly && weatherData.hourly.time && weatherData.hourly.wind_direction_10m) {
+      if (weatherData.hourly && weatherData.hourly.time && weatherData.hourly.wind_direction_10m && weatherData.hourly.wind_speed_10m) {
         weatherData.hourly.time.forEach((timeStr, index) => {
           const hour = new Date(timeStr).getHours();
           if (hour >= 6 && hour <= 19) {
             hourlyWind[hour] = weatherData.hourly.wind_direction_10m[index];
+            hourlyWindSpeed[hour] = weatherData.hourly.wind_speed_10m[index];
           }
         });
       }
 
       setWaveForecast(hourlyWaves);
       setWindForecast(hourlyWind);
+      setWindSpeedForecast(hourlyWindSpeed);
     } catch (error) {
       console.error("Error fetching forecasts:", error);
     }
@@ -176,6 +180,44 @@ const CrowdForecast = () => {
     }
     return result;
   }, [historicalData, waveForecast, windForecast, holidays, selectedDate]);
+
+  const seaConditions = useMemo(() => {
+    const waveVals = Object.values(waveForecast);
+    const windSpeedVals = Object.values(windSpeedForecast);
+    const windDirVals = Object.values(windForecast);
+
+    if (waveVals.length === 0) return null;
+
+    const avgWave = waveVals.reduce((sum, v) => sum + v, 0) / waveVals.length;
+    const avgWindSpeed = windSpeedVals.reduce((sum, v) => sum + v, 0) / windSpeedVals.length;
+    
+    let offshoreCount = 0;
+    let onshoreCount = 0;
+    let sideshoreCount = 0;
+
+    windDirVals.forEach(windDir => {
+      if (windDir >= 45 && windDir <= 135) {
+        offshoreCount++;
+      } else if (windDir >= 225 && windDir <= 315) {
+        onshoreCount++;
+      } else {
+        sideshoreCount++;
+      }
+    });
+
+    let windLabel = t('cfWindSideshore');
+    if (offshoreCount > onshoreCount && offshoreCount > sideshoreCount) {
+      windLabel = t('cfWindOffshore');
+    } else if (onshoreCount > offshoreCount && onshoreCount > sideshoreCount) {
+      windLabel = t('cfWindOnshore');
+    }
+
+    return {
+      waveHeight: avgWave.toFixed(1),
+      windSpeed: Math.round(avgWindSpeed),
+      windLabel
+    };
+  }, [waveForecast, windForecast, windSpeedForecast, locale]);
 
   useEffect(() => {
     fetchHistoricalData(selectedDate, selectedBeach);
@@ -279,6 +321,29 @@ const CrowdForecast = () => {
         </TouchableOpacity>
       </Modal>
 
+      {/* Sea conditions card */}
+      {seaConditions && (
+        <View style={styles.seaConditionsCard}>
+          <Text style={[styles.seaConditionsTitle, { textAlign: dir }]}>
+            {t('cfSeaConditions')}
+          </Text>
+          <View style={[styles.seaConditionsRow, { flexDirection: dir === 'rtl' ? 'row-reverse' : 'row' }]}>
+            <View style={styles.seaConditionsItem}>
+              <Text style={styles.seaConditionsValue}>{seaConditions.waveHeight}m</Text>
+              <Text style={styles.seaConditionsLabel}>{t('waveHeight')}</Text>
+            </View>
+            <View style={styles.seaConditionsItem}>
+              <Text style={styles.seaConditionsValue}>{seaConditions.windSpeed} km/h</Text>
+              <Text style={styles.seaConditionsLabel}>{t('windKmh')}</Text>
+            </View>
+            <View style={styles.seaConditionsItem}>
+              <Text style={styles.seaConditionsValueText}>{seaConditions.windLabel}</Text>
+              <Text style={styles.seaConditionsLabel}>{t('cfWindDirection')}</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
       {/* Chart */}
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -365,6 +430,46 @@ const styles = StyleSheet.create({
   modalScrollView: { width: '100%' },
   modalItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f1f5f9', alignItems: 'flex-start' },
   modalText: { fontSize: 18, color: '#334155' },
+  seaConditionsCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+    padding: 16,
+    marginBottom: 20,
+    alignSelf: 'stretch',
+  },
+  seaConditionsTitle: {
+    color: '#94a3b8',
+    fontSize: 14,
+    marginBottom: 12,
+    fontWeight: '500',
+  },
+  seaConditionsRow: {
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  seaConditionsItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  seaConditionsValue: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  seaConditionsValueText: {
+    color: '#38bdf8',
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  seaConditionsLabel: {
+    color: '#64748b',
+    fontSize: 12,
+  },
 });
 
 export default CrowdForecast;
